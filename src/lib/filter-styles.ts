@@ -1,0 +1,2 @@
+export const activeCls = "bg-text-primary/10 border-border-secondary text-text-primary";
+export const inactiveCls = "bg-bg-input border-border-primary text-text-tertiary hover:border-border-secondary hover:text-text-secondary";
