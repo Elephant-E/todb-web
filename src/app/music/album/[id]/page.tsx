@@ -55,6 +55,9 @@ export default function AlbumDetailPage() {
     })();
   }, [isValidId, albumId]);
 
+  const bd = backdropUrl(detail?.image_backdrop ?? null);
+  const c = useDetailColors(!!bd);
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 size={32} className="text-text-tertiary animate-spin" /></div>;
   }
@@ -69,10 +72,8 @@ export default function AlbumDetailPage() {
     );
   }
 
-  const bd = backdropUrl(detail.image_backdrop);
   const poster = posterUrl(detail.image_poster, "w500");
   const displayName = detail.name;
-  const c = useDetailColors(!!bd);
 
   const formatDuration = (ms: number | null) => {
     if (!ms) return null;

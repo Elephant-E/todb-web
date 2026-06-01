@@ -122,15 +122,17 @@ export default function PersonDetailPage() {
     } catch { setDeleting(false); }
   };
 
+  const bd = backdropUrl(detail?.image_backdrop ?? null);
+  const c = useDetailColors(!!bd);
+
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 size={32} className="text-text-tertiary animate-spin" /></div>;
   if (error || !detail) return <div className="min-h-screen flex flex-col items-center justify-center text-text-tertiary"><Users size={48} className="mb-4" /><p className="text-lg mb-4">{locale === "zh" ? "人物未找到" : "Person not found"}</p><Link href="/people" className="text-text-secondary hover:text-text-primary text-sm underline">{locale === "zh" ? "浏览人物" : "Browse people"}</Link></div>;
 
-  const bd = backdropUrl(detail.image_backdrop);
   const avatar = profileUrl(detail.image_profile, "w185");
   const externalIds: ExternalId[] = detail.external_ids ?? [];
   const displayName = locale === "en" && detail.original_name ? detail.original_name : detail.name;
   const canEdit = detail.is_can_edit ?? true;
-  const c = useDetailColors(!!bd);
+
 
 
   return (

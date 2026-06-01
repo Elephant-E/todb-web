@@ -119,18 +119,20 @@ export default function VideoDetailPage() {
   const handleDeleteSeasonClose = () => { setShowDeleteSeasonModal(false); setDeleteSeasonNum(null); };
   const handleDeleteEpisodeClose = () => { setShowDeleteEpisodeModal(false); setDeleteEpisodeNum(null); };
 
+  const bd = backdropUrl(detail?.image_backdrop ?? null);
+  const c = useDetailColors(!!bd);
+  const sortedEpisodes = useMemo(() => [...episodes].sort((a, b) => a.episode_number - b.episode_number), [episodes]);
+
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 size={32} className="text-text-tertiary animate-spin" /></div>;
   if (error || !detail) return <div className="min-h-screen flex flex-col items-center justify-center text-text-tertiary"><p className="text-lg mb-4">{t("browse.noResult")}</p><Link href="/browse" className="text-text-secondary hover:text-text-primary text-sm underline">{t("nav.browse")}</Link></div>;
 
-  const bd = backdropUrl(detail.image_backdrop);
   const poster = posterUrl(detail.image_poster, "w500");
   const externalIds: ExternalId[] = detail.external_ids ?? [];
   const displayTitle = locale === "en" && detail.origin_title ? detail.origin_title : detail.video_title;
   const castList = persons.filter((p) => p.department === "cast");
   const crewList = persons.filter((p) => p.department === "crew");
   const canEdit = detail.is_can_edit;
-  const c = useDetailColors(!!bd);
-  const sortedEpisodes = useMemo(() => [...episodes].sort((a, b) => a.episode_number - b.episode_number), [episodes]);
+
 
   return (
     <div className="min-h-screen bg-bg-primary">
