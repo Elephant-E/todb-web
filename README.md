@@ -158,4 +158,4 @@ src/
 
 ## License
 
-Private
+MIT
