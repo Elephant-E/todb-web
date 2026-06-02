@@ -3,11 +3,12 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Tv, Film, Star, Clock, Calendar, Globe, ExternalLink,
-  Loader2, Layers, Users, Plus, Pencil, RefreshCw, Trash2, Lock, Unlock, X,
+  Loader2, Layers, Users, Plus, Pencil, RefreshCw, Trash2, Lock, X,
 } from "lucide-react";
-import { backdropUrl, posterUrl, profileUrl, formatDate, formatRuntime } from "@/lib/utils";
+import { backdropUrl, logoUrl, posterUrl, profileUrl, formatDate, formatRuntime } from "@/lib/utils";
 import { useLocale } from "@/components/LocaleProvider";
 import { useDetailColors } from "@/lib/useDetailColors";
 import DetailHero from "@/components/DetailHero";
@@ -22,7 +23,7 @@ import EpisodeModals from "./modals/EpisodeModals";
 
 const ZH = {
   back: "返回", aliases: "别名", externalLinks: "外部链接", aliasesCount: "别名", partsCount: "分段",
-  votes: "投票", parts: "分段", seasonsEpisodes: "季与集", season: "第 ", seasonSuffix: " 季",
+  votes: "投票", parts: "分段", seasonsEpisodes: "季与集", season: "第 ", seasonSuffix: " 季", allSeasons: "全部季",
   episodes: "集", cast: "演员", crew: "制作", description: "简介", genres: "类型", sync: "同步",
   images: "图片", addAlias: "添加别名", editGenres: "编辑类型", syncTmdb: "同步 TMDB",
   deleteVideo: "删除影视", confirmDelete: "确认删除", deleteWarning: "删除后无法恢复，确认要删除吗？",
@@ -32,7 +33,7 @@ const ZH = {
 };
 const EN = {
   back: "Back", aliases: "Aliases", externalLinks: "External Links", aliasesCount: "Aliases", partsCount: "Parts",
-  votes: "Votes", parts: "Parts", seasonsEpisodes: "Seasons & Episodes", season: "Season ", seasonSuffix: "",
+  votes: "Votes", parts: "Parts", seasonsEpisodes: "Seasons & Episodes", season: "Season ", seasonSuffix: "", allSeasons: "All Seasons",
   episodes: "episodes", cast: "Cast", crew: "Crew", description: "Description", genres: "Genres", sync: "Sync",
   images: "Images", addAlias: "Add Alias", editGenres: "Edit Genres", syncTmdb: "Sync TMDB",
   deleteVideo: "Delete Video", confirmDelete: "Confirm Delete", deleteWarning: "This action cannot be undone. Are you sure?",
@@ -46,6 +47,7 @@ export default function VideoDetailPage() {
   const router = useRouter();
   const { locale, t } = useLocale();
   const videoId = Number(id);
+  const isValidId = !isNaN(videoId) && videoId > 0;
   const l = locale === "zh" ? ZH : EN;
 
   const [detail, setDetail] = useState<VideoDetail | null>(null);
@@ -58,8 +60,8 @@ export default function VideoDetailPage() {
   const [images, setImages] = useState<ImageItem[]>([]);
   const [genreIds, setGenreIds] = useState<number[]>([]);
   const [persons, setPersons] = useState<VideoPerson[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(isValidId);
+  const [error, setError] = useState(!isValidId);
   const [loadingEpisodes, setLoadingEpisodes] = useState(false);
 
   const [showAliasModal, setShowAliasModal] = useState(false);
@@ -77,14 +79,12 @@ export default function VideoDetailPage() {
   const [deleteEpisodeNum, setDeleteEpisodeNum] = useState<number | null>(null);
   const [showAddEpisodesModal, setShowAddEpisodesModal] = useState(false);
 
-  const isValidId = !isNaN(videoId) && videoId > 0;
-
   const refreshImages = useCallback(async () => {
     try { const r = await api.image.list({ relation_type: "video_list", relation_id: videoId, page: 1, page_size: 50 }); setImages(r.data.items); } catch {}
   }, [videoId]);
 
   useEffect(() => {
-    if (!isValidId) { setLoading(false); setError(true); return; }
+    if (!isValidId) return;
     (async () => {
       try {
         const detailRes = await api.video.detail(videoId);
@@ -97,7 +97,7 @@ export default function VideoDetailPage() {
         extra.push(api.image.list({ relation_type: "video_list", relation_id: videoId, page: 1, page_size: 50 }).then((r) => setImages(r.data.items)).catch(() => {}));
         if (detailRes.data.persons) setPersons(detailRes.data.persons);
         if (detailRes.data.video_type === "tv") {
-          extra.push(api.video.season.all(videoId).then((r) => { setSeasons(r.data); if (r.data.length > 0) setSelectedSeason(r.data[0].season_number); }).catch(() => {}));
+          extra.push(api.video.season.all(videoId).then((r) => { setSeasons(r.data); }).catch(() => {}));
         }
         await Promise.all(extra);
       } catch { setError(true); } finally { setLoading(false); }
@@ -115,7 +115,7 @@ export default function VideoDetailPage() {
 
   const handleDeleteTitle = async (titleId: number) => { try { await api.video.titles.delete(videoId, titleId); setTitles(titles.filter((t) => t.id !== titleId)); } catch {} };
   const handleToggleGenre = async (genreId: number) => { const next = genreIds.includes(genreId) ? genreIds.filter((id) => id !== genreId) : [...genreIds, genreId]; try { await api.video.genres.update(videoId, next); setGenreIds(next); } catch {} };
-  const handleSeasonsChange = (newSeasons: Season[]) => { setSeasons(newSeasons); if (newSeasons.length > 0 && selectedSeason === null) setSelectedSeason(newSeasons[0].season_number); };
+  const handleSeasonsChange = (newSeasons: Season[]) => { setSeasons(newSeasons); };
   const handleDeleteSeasonClose = () => { setShowDeleteSeasonModal(false); setDeleteSeasonNum(null); };
   const handleDeleteEpisodeClose = () => { setShowDeleteEpisodeModal(false); setDeleteEpisodeNum(null); };
 
@@ -138,10 +138,11 @@ export default function VideoDetailPage() {
     <div className="min-h-screen bg-bg-primary">
       <DetailHero
         backdropUrl={bd}
+        priorityBackdrop
         onBack={() => router.back()}
         backLabel={l.back}
         posterSlot={
-          poster ? <img src={poster} alt={detail.video_title} className="w-[200px] md:w-[260px] rounded-2xl shadow-elevated" /> : <div className={`w-[200px] md:w-[260px] aspect-[2/3] rounded-2xl ${c.posterBg} flex items-center justify-center`}>{detail.video_type === "tv" ? <Tv size={48} className={c.posterIc} /> : <Film size={48} className={c.posterIc} />}</div>
+          poster ? <Image src={poster} alt={detail.video_title || ""} width={260} height={390} unoptimized className="w-[200px] md:w-[260px] h-auto rounded-2xl shadow-elevated object-cover" /> : <div className={`w-[200px] md:w-[260px] aspect-[2/3] rounded-2xl ${c.posterBg} flex items-center justify-center`}>{detail.video_type === "tv" ? <Tv size={48} className={c.posterIc} /> : <Film size={48} className={c.posterIc} />}</div>
         }
         infoSlot={<>
               <div className="flex items-end gap-3 mb-2">
@@ -187,8 +188,8 @@ export default function VideoDetailPage() {
 
       <div className="relative z-10 px-6 pt-4 pb-20"><div className="max-w-[1400px] mx-auto space-y-8">
 
-        {castList.length > 0 && <div><h3 className="text-xs font-semibold text-text-tertiary uppercase tracking-[0.06em] mb-4">{l.cast}</h3><div className="flex gap-4 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-thin">{castList.map((person) => {const avatar = profileUrl(person.image_profile, "w185"); return (<Link key={`cast-${person.person_id}`} href={`/person/${person.person_id}`} className="group flex flex-col items-center shrink-0 w-[80px]"><div className="w-16 h-16 rounded-full overflow-hidden bg-bg-hover mb-2 group-hover:ring-1 group-hover:ring-text-tertiary transition-all">{avatar ? <img src={avatar} alt={person.name} className="w-full h-full object-cover" loading="lazy" /> : <div className="w-full h-full flex items-center justify-center"><Users size={16} className="text-text-tertiary" /></div>}</div><span className="text-xs font-medium text-text-primary text-center line-clamp-1 group-hover:text-accent transition-colors">{person.name}</span>{person.character && <span className="text-[10px] text-text-tertiary text-center line-clamp-1 mt-0.5">{person.character}</span>}</Link>);})}</div></div>}
-        {crewList.length > 0 && <div><h3 className="text-xs font-semibold text-text-tertiary uppercase tracking-[0.06em] mb-4">{l.crew}</h3><div className="flex gap-4 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-thin">{crewList.map((person) => {const avatar = profileUrl(person.image_profile, "w185"); return (<Link key={`crew-${person.person_id}`} href={`/person/${person.person_id}`} className="group flex flex-col items-center shrink-0 w-[80px]"><div className="w-16 h-16 rounded-full overflow-hidden bg-bg-hover mb-2 group-hover:ring-1 group-hover:ring-text-tertiary transition-all">{avatar ? <img src={avatar} alt={person.name} className="w-full h-full object-cover" loading="lazy" /> : <div className="w-full h-full flex items-center justify-center"><Users size={16} className="text-text-tertiary" /></div>}</div><span className="text-xs font-medium text-text-primary text-center line-clamp-1 group-hover:text-accent transition-colors">{person.name}</span>{person.character && <span className="text-[10px] text-text-tertiary text-center line-clamp-1 mt-0.5">{person.character}</span>}</Link>);})}</div></div>}
+        {castList.length > 0 && <div><h3 className="text-xs font-semibold text-text-tertiary uppercase tracking-[0.06em] mb-4">{l.cast}</h3><div className="flex gap-4 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-thin">{castList.map((person) => {const avatar = profileUrl(person.image_profile, "w185"); return (<Link key={`cast-${person.person_id}`} href={`/person/${person.person_id}`} className="group flex flex-col items-center shrink-0 w-[80px]"><div className="relative w-16 h-16 rounded-full overflow-hidden bg-bg-hover mb-2 group-hover:ring-1 group-hover:ring-text-tertiary transition-all">{avatar ? <Image src={avatar} alt={person.name} fill sizes="64px" unoptimized className="object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Users size={16} className="text-text-tertiary" /></div>}</div><span className="text-xs font-medium text-text-primary text-center line-clamp-1 group-hover:text-accent transition-colors">{person.name}</span>{person.character && <span className="text-[10px] text-text-tertiary text-center line-clamp-1 mt-0.5">{person.character}</span>}</Link>);})}</div></div>}
+        {crewList.length > 0 && <div><h3 className="text-xs font-semibold text-text-tertiary uppercase tracking-[0.06em] mb-4">{l.crew}</h3><div className="flex gap-4 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-thin">{crewList.map((person) => {const avatar = profileUrl(person.image_profile, "w185"); return (<Link key={`crew-${person.person_id}`} href={`/person/${person.person_id}`} className="group flex flex-col items-center shrink-0 w-[80px]"><div className="relative w-16 h-16 rounded-full overflow-hidden bg-bg-hover mb-2 group-hover:ring-1 group-hover:ring-text-tertiary transition-all">{avatar ? <Image src={avatar} alt={person.name} fill sizes="64px" unoptimized className="object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Users size={16} className="text-text-tertiary" /></div>}</div><span className="text-xs font-medium text-text-primary text-center line-clamp-1 group-hover:text-accent transition-colors">{person.name}</span>{person.character && <span className="text-[10px] text-text-tertiary text-center line-clamp-1 mt-0.5">{person.character}</span>}</Link>);})}</div></div>}
 
         {parts.length > 0 && <div><h3 className="text-xs font-semibold text-text-tertiary uppercase tracking-[0.06em] mb-3"><span className="inline-flex items-center gap-1"><Layers size={12} /> {l.parts}</span></h3><div className="flex flex-wrap gap-2">{parts.map((part) => (<span key={part.part_id} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-bg-hover text-text-secondary"><span className="font-mono text-text-tertiary">P{part.part_number}</span><span className="truncate max-w-[160px]">{part.part_title}</span>{part.vote_average != null && <span className="flex items-center gap-0.5 text-text-tertiary"><Star size={9} /> {part.vote_average.toFixed(1)}</span>}</span>))}</div></div>}
 
@@ -197,17 +198,34 @@ export default function VideoDetailPage() {
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xs font-semibold text-text-tertiary uppercase tracking-[0.06em]">{l.seasonsEpisodes}</h3>
               <div className="flex gap-2 flex-wrap">
+                <button onClick={() => setSelectedSeason(null)} className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${selectedSeason === null ? "bg-text-primary text-bg-primary" : "bg-bg-hover text-text-secondary hover:text-text-primary"}`}>{l.allSeasons}</button>
                 {seasons.map((s) => (
                   <button key={s.season_id} onClick={() => setSelectedSeason(s.season_number)} className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${selectedSeason === s.season_number ? "bg-text-primary text-bg-primary" : "bg-bg-hover text-text-secondary hover:text-text-primary"}`}>S{s.season_number}</button>
                 ))}
                 {canEdit && <button onClick={() => setShowSeasonModal(true)} className="px-4 py-2 rounded-xl text-sm font-medium transition-all bg-bg-hover text-text-secondary hover:text-text-primary"><Plus size={14} /></button>}
               </div>
             </div>
-            {selectedSeason !== null && (
+
+            {selectedSeason === null ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 animate-fade-in">
+                {seasons.map((s) => {
+                  const sPoster = posterUrl(s.image_poster, "w342");
+                  return (
+                    <button key={s.season_id} onClick={() => setSelectedSeason(s.season_number)} className="group text-left flex flex-col">
+                      <div className="relative w-full aspect-[2/3] rounded-xl overflow-hidden bg-bg-input mb-2 group-hover:shadow-elevated transition-all">
+                        {sPoster ? <Image src={sPoster} alt="" fill sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw" unoptimized className="object-cover group-hover:scale-105 transition-transform duration-300" /> : <div className="w-full h-full flex items-center justify-center"><Tv size={32} className="text-text-tertiary" /></div>}
+                      </div>
+                      <h4 className="text-sm font-medium text-text-primary group-hover:text-text-secondary transition-colors line-clamp-1">{l.season}{s.season_number}{l.seasonSuffix}</h4>
+                      <p className="text-xs text-text-tertiary mt-0.5">{s.episode_count != null ? s.episode_count : 0} {l.episodes}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
               <div className="animate-fade-in">
                 {(() => { const currentSeason = seasons.find((s) => s.season_number === selectedSeason); return currentSeason ? (
                   <div className="grid md:grid-cols-[160px_1fr] gap-4 mb-6 p-4 rounded-xl bg-bg-hover/50">
-                    <div>{posterUrl(currentSeason.image_poster, "w342") ? <img src={posterUrl(currentSeason.image_poster, "w342")!} alt="" className="w-full aspect-[2/3] rounded-lg object-cover" /> : <div className="w-full aspect-[2/3] rounded-lg bg-bg-input flex items-center justify-center"><Tv size={32} className="text-text-tertiary" /></div>}</div>
+                    <div className="relative w-full aspect-[2/3]">{posterUrl(currentSeason.image_poster, "w342") ? <Image src={posterUrl(currentSeason.image_poster, "w342")!} alt="" fill sizes="(max-width: 768px) 100vw, 342px" unoptimized className="rounded-lg object-cover" /> : <div className="w-full aspect-[2/3] rounded-lg bg-bg-input flex items-center justify-center"><Tv size={32} className="text-text-tertiary" /></div>}</div>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="text-lg font-semibold text-text-primary">{l.season}{currentSeason.season_number}{l.seasonSuffix}</h3>
@@ -229,7 +247,7 @@ export default function VideoDetailPage() {
                   <div className="space-y-2">
                     {sortedEpisodes.map((ep) => { const epPoster = posterUrl(ep.image_poster, "w185"); return (
                       <div key={ep.episode_id} className="flex gap-4 p-4 rounded-xl bg-bg-hover/50 hover:bg-bg-hover transition-all group">
-                        <div className="w-28 shrink-0 aspect-video rounded-lg overflow-hidden bg-bg-input">{epPoster ? <img src={epPoster} alt="" className="w-full h-full object-cover" loading="lazy" /> : <div className="w-full h-full flex items-center justify-center text-text-tertiary"><Tv size={20} /></div>}</div>
+                        <div className="relative w-28 shrink-0 aspect-video rounded-lg overflow-hidden bg-bg-input">{epPoster ? <Image src={epPoster} alt="" fill sizes="112px" unoptimized className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-text-tertiary"><Tv size={20} /></div>}</div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-xs font-mono text-text-tertiary">E{ep.episode_number}</span>
@@ -261,26 +279,48 @@ export default function VideoDetailPage() {
         )}
 
         {(() => {
-          const byType = (type: string) => images.filter((img) => img.type === type);
-          const renderSection = (type: string, title: string, aspect: string, contain?: boolean, cols?: string) => {
+          const imageConfig = {
+            backdrop: { width: 300, height: 169, url: (path: string) => backdropUrl(path, "w300") },
+            poster: { width: 185, height: 278, url: (path: string) => posterUrl(path, "w185") },
+            logo: { width: 300, height: 169, url: (path: string) => logoUrl(path, "w300") },
+          } as const;
+          const byType = (type: ImageItem["type"]) => images.filter((img) => img.type === type);
+          const renderSection = (type: keyof typeof imageConfig, title: string, aspect: string, contain?: boolean, cols?: string) => {
             const items = byType(type);
+            const config = imageConfig[type];
             if (items.length === 0) return null;
             return (
               <div>
                 <h3 className="text-xs font-semibold text-text-tertiary uppercase tracking-[0.06em] mb-3">{title}</h3>
                 <div className={`grid ${cols || "grid-cols-4 sm:grid-cols-5 md:grid-cols-6"} gap-2`}>
-                  {items.map((img) => (
-                    <div key={img.image_id} className="group relative rounded-lg overflow-hidden bg-bg-hover border border-border-primary">
-                      <img src={posterUrl(img.image_path, "w185") || ""} alt={img.type} className={`w-full ${aspect} ${contain ? "object-contain" : "object-cover"}`} loading="lazy" />
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1">
-                        <div className="flex gap-1">
-                          {!img.is_default && <button onClick={() => api.image.setDefault(img.image_id).then(refreshImages)} className="px-2 py-1 rounded text-[10px] bg-white/20 text-white hover:bg-white/30">{l.setDefault}</button>}
-                          {img.is_can_delete && <button onClick={() => api.image.delete(img.image_id).then(refreshImages)} className="px-2 py-1 rounded text-[10px] bg-white/20 text-white hover:bg-white/30">{l.delete}</button>}
+                  {items.map((img) => {
+                    const imageSrc = config.url(img.image_path);
+                    return (
+                      <div key={img.image_id} className={`group relative ${aspect} rounded-lg overflow-hidden bg-bg-hover border border-border-primary`}>
+                        {imageSrc ? (
+                          <Image
+                            src={imageSrc}
+                            alt={img.type}
+                            width={config.width}
+                            height={config.height}
+                            unoptimized
+                            className={`h-full w-full ${contain ? "object-contain" : "object-cover"}`}
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-text-tertiary">
+                            <Film size={18} />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1">
+                          <div className="flex gap-1">
+                            {!img.is_default && <button onClick={() => api.image.setDefault(img.image_id).then(refreshImages)} className="px-2 py-1 rounded text-[10px] bg-white/20 text-white hover:bg-white/30">{l.setDefault}</button>}
+                            {img.is_can_delete && <button onClick={() => api.image.delete(img.image_id).then(refreshImages)} className="px-2 py-1 rounded text-[10px] bg-white/20 text-white hover:bg-white/30">{l.delete}</button>}
+                          </div>
                         </div>
+                        {img.is_default && <span className="absolute top-1 right-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-text-primary text-bg-primary">★</span>}
                       </div>
-                      {img.is_default && <span className="absolute top-1 right-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-text-primary text-bg-primary">★</span>}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );

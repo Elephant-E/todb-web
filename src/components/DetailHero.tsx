@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
+import Image from "next/image";
 
 interface DetailHeroProps {
   backdropUrl: string | null;
@@ -7,14 +8,31 @@ interface DetailHeroProps {
   backLabel: string;
   posterSlot: ReactNode;
   infoSlot: ReactNode;
+  priorityBackdrop?: boolean;
 }
 
-export default function DetailHero({ backdropUrl: bd, onBack, backLabel, posterSlot, infoSlot }: DetailHeroProps) {
+export default function DetailHero({
+  backdropUrl: bd,
+  onBack,
+  backLabel,
+  posterSlot,
+  infoSlot,
+  priorityBackdrop = false,
+}: DetailHeroProps) {
   return (
     <div className="relative">
       {bd && (
         <div className="absolute inset-0 z-0">
-          <img src={bd} alt="" className="w-full h-full object-[center_top] object-cover" role="presentation" />
+          <Image
+            src={bd}
+            alt=""
+            fill
+            sizes="100vw"
+            priority={priorityBackdrop}
+            unoptimized
+            className="object-[center_top] object-cover"
+            role="presentation"
+          />
           <div className="absolute inset-0 bg-black/60" />
         </div>
       )}

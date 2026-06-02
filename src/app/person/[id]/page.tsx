@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Calendar, Globe, ExternalLink,
   Loader2, MapPin, Users, Pencil, Trash2,
@@ -40,11 +41,12 @@ export default function PersonDetailPage() {
   const router = useRouter();
   const { locale } = useLocale();
   const personId = Number(id);
+  const isValidId = !isNaN(personId) && personId > 0;
   const l = locale === "zh" ? ZH : EN;
 
   const [detail, setDetail] = useState<PersonDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(isValidId);
+  const [error, setError] = useState(!isValidId);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -62,35 +64,33 @@ export default function PersonDetailPage() {
   const [editIsVirtual, setEditIsVirtual] = useState(false);
   const [editIsAdult, setEditIsAdult] = useState(false);
 
-  const isValidId = !isNaN(personId) && personId > 0;
-
-  const fetchDetail = async () => {
+  const fetchDetail = useCallback(async () => {
     try {
       const res = await api.person.info(personId);
       setDetail(res.data);
     } catch { setError(true); }
-  };
+  }, [personId]);
 
   useEffect(() => {
-    if (!isValidId) { setLoading(false); setError(true); return; }
+    if (!isValidId) return;
     (async () => { await fetchDetail(); setLoading(false); })();
-  }, [isValidId, personId]);
+  }, [fetchDetail, isValidId]);
 
-  useEffect(() => {
-    if (showEditModal && detail) {
-      setEditName(detail.name);
-      setEditOriginalName(detail.original_name || "");
-      setEditBiography(detail.biography || "");
-      setEditBirthday(detail.birthday || "");
-      setEditDeathday(detail.deathday || "");
-      setEditGender(detail.gender || "");
-      setEditBirthplace(detail.birthplace || "");
-      setEditHomepage(detail.homepage || "");
-      setEditIsVirtual(!!detail.is_virtual);
-      setEditIsAdult(detail.is_adult);
-      setEditError("");
-    }
-  }, [showEditModal, detail]);
+  const openEditModal = () => {
+    if (!detail) return;
+    setEditName(detail.name);
+    setEditOriginalName(detail.original_name || "");
+    setEditBiography(detail.biography || "");
+    setEditBirthday(detail.birthday || "");
+    setEditDeathday(detail.deathday || "");
+    setEditGender(detail.gender || "");
+    setEditBirthplace(detail.birthplace || "");
+    setEditHomepage(detail.homepage || "");
+    setEditIsVirtual(!!detail.is_virtual);
+    setEditIsAdult(detail.is_adult);
+    setEditError("");
+    setShowEditModal(true);
+  };
 
   const handleSave = async () => {
     if (!editName.trim()) { setEditError(locale === "zh" ? "姓名不能为空" : "Name is required"); return; }
@@ -139,17 +139,18 @@ export default function PersonDetailPage() {
     <div className="min-h-screen bg-bg-primary">
       <DetailHero
         backdropUrl={bd}
+        priorityBackdrop
         onBack={() => router.back()}
         backLabel={l.back}
         posterSlot={
-          avatar ? <img src={avatar} alt={detail.name} className={`w-[200px] md:w-[260px] aspect-square rounded-2xl shadow-elevated object-cover ${c.posterB}`} /> : <div className={`w-[200px] md:w-[260px] aspect-square rounded-2xl ${c.posterBg} ${c.posterB} flex items-center justify-center`}><Users size={48} className={c.posterIc} /></div>
+          avatar ? <Image src={avatar} alt={detail.name} width={260} height={260} unoptimized className={`w-[200px] md:w-[260px] aspect-square rounded-2xl shadow-elevated object-cover ${c.posterB}`} /> : <div className={`w-[200px] md:w-[260px] aspect-square rounded-2xl ${c.posterBg} ${c.posterB} flex items-center justify-center`}><Users size={48} className={c.posterIc} /></div>
         }
         infoSlot={<>
           <div className="pt-0 md:pt-3">
             <div className="flex items-end gap-3 mb-2">
               <h1 className={`text-3xl md:text-5xl font-bold tracking-tight ${c.h1}`}>{displayName}</h1>
               {canEdit && <div className="flex items-end gap-1">
-                <button onClick={() => setShowEditModal(true)} className={`p-1.5 rounded-lg transition-all ${c.icon}`} title={l.editPerson}><Pencil size={14} /></button>
+                <button onClick={openEditModal} className={`p-1.5 rounded-lg transition-all ${c.icon}`} title={l.editPerson}><Pencil size={14} /></button>
                 <button onClick={() => setShowDeleteModal(true)} className={`p-1.5 rounded-lg transition-all text-red-400/40 hover:text-red-400`} title={l.deletePerson}><Trash2 size={14} /></button>
               </div>}
             </div>

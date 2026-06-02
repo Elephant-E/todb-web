@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Tv, Film } from "lucide-react";
 import { posterUrl, formatYear, videoTypeLabel } from "@/lib/utils";
 import type { VideoListItem } from "@/types";
@@ -37,13 +38,15 @@ export function VideoCard({ video, index = 0, viewMode = "grid" }: VideoCardProp
         className="group flex gap-4 p-4 rounded-xl bg-bg-card hover:bg-bg-hover transition-all duration-200 animate-fade-in"
         style={{ animationDelay: `${delay}ms` }}
       >
-        <div className="w-20 shrink-0 aspect-[2/3] rounded-lg overflow-hidden bg-bg-card">
+        <div className="relative w-20 shrink-0 aspect-[2/3] rounded-lg overflow-hidden bg-bg-card">
           {poster && !imgError ? (
-            <img
+            <Image
               src={poster}
               alt={video.video_title}
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-              loading="lazy"
+              fill
+              sizes="80px"
+              unoptimized
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
               onError={() => setImgError(true)}
             />
           ) : (
@@ -90,11 +93,13 @@ export function VideoCard({ video, index = 0, viewMode = "grid" }: VideoCardProp
     >
       <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-bg-card group-hover:shadow-elevated">
         {poster && !imgError ? (
-          <img
+          <Image
             src={poster}
             alt={video.video_title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+            unoptimized
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
             onError={() => setImgError(true)}
           />
         ) : (

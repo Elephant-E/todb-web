@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Search, Bell, User, Menu, X, Languages, Plus, ChevronDown, Film, Users as UsersIcon, Music as MusicIcon, BookOpen, Gamepad2 } from "lucide-react";
+import { Search, Bell, User, Menu, X, Languages, Plus, Film, Users as UsersIcon, Music as MusicIcon, BookOpen, Gamepad2 } from "lucide-react";
 import { UserDropdown } from "@/components/UserDropdown";
 import { AddVideoModal } from "@/components/AddVideoModal";
 import { AddPersonModal } from "@/components/AddPersonModal";
@@ -35,7 +35,7 @@ export function Navbar() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await api.user.info();
+        const res = await api.user.info({ skipAuthRedirect: true });
         setUserInfo(res.data);
       } catch {}
     })();
@@ -53,11 +53,9 @@ export function Navbar() {
     return () => observer.disconnect();
   }, [isHome]);
 
-  const isBrowse = pathname === "/browse" || pathname.startsWith("/video/");
-
   useEffect(() => {
     if (!addDropdownOpen) return;
-    const h = (e: MouseEvent) => { setAddDropdownOpen(false); };
+    const h = () => { setAddDropdownOpen(false); };
     document.addEventListener("click", h);
     return () => document.removeEventListener("click", h);
   }, [addDropdownOpen]);
@@ -83,8 +81,12 @@ export function Navbar() {
           <span>
             <Link href="/browse" className="w-fit text-[14px] font-semibold text-white/70 hover:text-white transition-opacity">Browse</Link>
           </span>
-          <span>
-            <a href="/sign" className="w-fit text-[14px] font-semibold text-white/70 hover:text-white transition-opacity">Log in</a>
+          <span className="flex items-center">
+            {userInfo ? (
+              <UserDropdown userInfo={userInfo} />
+            ) : (
+              <a href="/sign" className="w-fit text-[14px] font-semibold text-white/70 hover:text-white transition-opacity">Log in</a>
+            )}
           </span>
           <span className={`overflow-hidden transition-all duration-300 ease-out ${showCta ? "ml-2 max-w-[100px] opacity-100" : "ml-0 max-w-0 opacity-0"}`}>
             <Link
@@ -116,7 +118,22 @@ export function Navbar() {
         {mobileOpen && (
           <div className="md:hidden mt-2 rounded-2xl bg-white/[0.08] backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.15)] p-4 flex flex-col gap-3 animate-fade-in">
             <Link href="/browse" className="text-[13px] font-semibold text-white/70 hover:text-white transition-opacity" onClick={() => setMobileOpen(false)}>Browse</Link>
-            <a href="/sign" className="text-[13px] font-semibold text-white/70 hover:text-white transition-opacity">Log in</a>
+            {userInfo ? (
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center overflow-hidden shrink-0">
+                  {userInfo.avatar ? (
+                    <img src={userInfo.avatar} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <User size={12} className="text-white/70" />
+                  )}
+                </div>
+                <Link href="/profile" className="text-[13px] font-semibold text-white/70 hover:text-white transition-opacity" onClick={() => setMobileOpen(false)}>
+                  {userInfo.nickname || "Profile"}
+                </Link>
+              </div>
+            ) : (
+              <a href="/sign" className="text-[13px] font-semibold text-white/70 hover:text-white transition-opacity">Log in</a>
+            )}
             <Link href="/browse" className="mt-1 inline-flex items-center justify-center rounded-full h-9 px-4 text-[13px] font-semibold bg-white text-[#111] hover:bg-white/90 transition-colors" onClick={() => setMobileOpen(false)}>
               开始探索
             </Link>
@@ -169,56 +186,58 @@ export function Navbar() {
 
 
         <div className="flex items-center gap-4 shrink-0 ml-auto">
-          <div className="relative">
-            <button
-              onClick={() => setAddDropdownOpen(!addDropdownOpen)}
-              className="p-2 text-text-tertiary hover:text-text-primary transition-colors"
-              title={locale === "zh" ? "添加" : "Add"}
-            >
-              <Plus size={18} />
-            </button>
-            {addDropdownOpen && (
-              <div className="absolute right-0 top-12 w-40 rounded-2xl bg-[rgba(10,10,10,0.72)] backdrop-blur-xl border border-[rgba(255,255,255,0.08)] shadow-elevated py-1 px-2 animate-scale-in z-50">
-                <button
-                  onClick={() => { setAddModalOpen(true); setAddDropdownOpen(false); }}
-                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-                >
-                  <Film size={16} className="text-white/40" /> {locale === "zh" ? "影视" : "Video"}
-                </button>
-                <button
-                  onClick={() => { setAddMusicOpen(true); setAddDropdownOpen(false); }}
-                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-                >
-                  <MusicIcon size={16} className="text-white/40" /> {locale === "zh" ? "音乐" : "Music"}
-                </button>
-                <button
-                  onClick={() => { setAddPersonOpen(true); setAddDropdownOpen(false); }}
-                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-                >
-                  <UsersIcon size={16} className="text-white/40" /> {locale === "zh" ? "人物" : "Person"}
-                </button>
-                <div className="my-1 border-t border-white/[0.08]" />
-                <button
-                  onClick={() => { setAddDropdownOpen(false); setComingSoon(true); setTimeout(() => setComingSoon(false), 2000); }}
-                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-                >
-                  <BookOpen size={16} className="text-white/40" /> {locale === "zh" ? "书籍" : "Book"}
-                </button>
-                <button
-                  onClick={() => { setAddDropdownOpen(false); setComingSoon(true); setTimeout(() => setComingSoon(false), 2000); }}
-                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-                >
-                  <BookOpen size={16} className="text-white/40" /> {locale === "zh" ? "漫画" : "Comic"}
-                </button>
-                <button
-                  onClick={() => { setAddDropdownOpen(false); setComingSoon(true); setTimeout(() => setComingSoon(false), 2000); }}
-                  className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-                >
-                  <Gamepad2 size={16} className="text-white/40" /> {locale === "zh" ? "游戏" : "Game"}
-                </button>
-              </div>
-            )}
-          </div>
+          {userInfo && (
+            <div className="relative">
+              <button
+                onClick={() => setAddDropdownOpen(!addDropdownOpen)}
+                className="p-2 text-text-tertiary hover:text-text-primary transition-colors"
+                title={locale === "zh" ? "添加" : "Add"}
+              >
+                <Plus size={18} />
+              </button>
+              {addDropdownOpen && (
+                <div className="absolute right-0 top-12 w-40 rounded-2xl bg-[rgba(10,10,10,0.72)] backdrop-blur-xl border border-[rgba(255,255,255,0.08)] shadow-elevated py-1 px-2 animate-scale-in z-50">
+                  <button
+                    onClick={() => { setAddModalOpen(true); setAddDropdownOpen(false); }}
+                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                  >
+                    <Film size={16} className="text-white/40" /> {locale === "zh" ? "影视" : "Video"}
+                  </button>
+                  <button
+                    onClick={() => { setAddMusicOpen(true); setAddDropdownOpen(false); }}
+                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                  >
+                    <MusicIcon size={16} className="text-white/40" /> {locale === "zh" ? "音乐" : "Music"}
+                  </button>
+                  <button
+                    onClick={() => { setAddPersonOpen(true); setAddDropdownOpen(false); }}
+                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                  >
+                    <UsersIcon size={16} className="text-white/40" /> {locale === "zh" ? "人物" : "Person"}
+                  </button>
+                  <div className="my-1 border-t border-white/[0.08]" />
+                  <button
+                    onClick={() => { setAddDropdownOpen(false); setComingSoon(true); setTimeout(() => setComingSoon(false), 2000); }}
+                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                  >
+                    <BookOpen size={16} className="text-white/40" /> {locale === "zh" ? "书籍" : "Book"}
+                  </button>
+                  <button
+                    onClick={() => { setAddDropdownOpen(false); setComingSoon(true); setTimeout(() => setComingSoon(false), 2000); }}
+                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                  >
+                    <BookOpen size={16} className="text-white/40" /> {locale === "zh" ? "漫画" : "Comic"}
+                  </button>
+                  <button
+                    onClick={() => { setAddDropdownOpen(false); setComingSoon(true); setTimeout(() => setComingSoon(false), 2000); }}
+                    className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                  >
+                    <Gamepad2 size={16} className="text-white/40" /> {locale === "zh" ? "游戏" : "Game"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
           <button
             onClick={() => setLocale(locale === "zh" ? "en" : "zh")}
             className="p-2 text-text-tertiary hover:text-text-primary transition-colors"
@@ -226,17 +245,28 @@ export function Navbar() {
           >
             <Languages size={18} />
           </button>
-          <div className="relative">
-            <button
-              ref={bellRef}
-              onClick={() => setNotifOpen(!notifOpen)}
-              className="p-2 text-text-tertiary hover:text-text-primary transition-colors"
+          {userInfo && (
+            <div className="relative">
+              <button
+                ref={bellRef}
+                onClick={() => setNotifOpen(!notifOpen)}
+                className="p-2 text-text-tertiary hover:text-text-primary transition-colors"
+              >
+                <Bell size={18} />
+              </button>
+              <NotificationPopover open={notifOpen} onClose={() => setNotifOpen(false)} anchorRef={bellRef} />
+            </div>
+          )}
+          {userInfo ? (
+            <UserDropdown userInfo={userInfo} />
+          ) : (
+            <Link
+              href="/sign"
+              className="text-[13px] font-semibold text-text-primary bg-bg-hover hover:bg-bg-hover/80 px-4 py-2 rounded-full transition-colors"
             >
-              <Bell size={18} />
-            </button>
-            <NotificationPopover open={notifOpen} onClose={() => setNotifOpen(false)} anchorRef={bellRef} />
-          </div>
-          <UserDropdown userInfo={userInfo} />
+              {locale === "zh" ? "登录" : "Log in"}
+            </Link>
+          )}
         </div>
       </nav>
 
@@ -290,16 +320,25 @@ export function Navbar() {
                 {tab.label}
               </Link>
             ))}
-            <Link href="/profile" className="flex items-center gap-3 px-3 py-2.5 text-[14px] font-medium text-text-tertiary hover:text-text-primary rounded-lg hover:bg-bg-hover transition-colors" onClick={() => setMobileOpen(false)}>
-              <div className="w-6 h-6 rounded-full bg-bg-input flex items-center justify-center overflow-hidden shrink-0">
-                {userInfo?.avatar ? (
-                  <img src={userInfo.avatar} alt="" className="w-full h-full object-cover" />
-                ) : (
+            {userInfo ? (
+              <Link href="/profile" className="flex items-center gap-3 px-3 py-2.5 text-[14px] font-medium text-text-tertiary hover:text-text-primary rounded-lg hover:bg-bg-hover transition-colors" onClick={() => setMobileOpen(false)}>
+                <div className="w-6 h-6 rounded-full bg-bg-input flex items-center justify-center overflow-hidden shrink-0">
+                  {userInfo.avatar ? (
+                    <img src={userInfo.avatar} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <User size={12} className="text-text-tertiary" />
+                  )}
+                </div>
+                {userInfo.nickname || "Profile"}
+              </Link>
+            ) : (
+              <Link href="/sign" className="flex items-center gap-3 px-3 py-2.5 text-[14px] font-medium text-text-tertiary hover:text-text-primary rounded-lg hover:bg-bg-hover transition-colors" onClick={() => setMobileOpen(false)}>
+                <div className="w-6 h-6 rounded-full bg-bg-input flex items-center justify-center overflow-hidden shrink-0">
                   <User size={12} className="text-text-tertiary" />
-                )}
-              </div>
-              {userInfo?.nickname || t("nav.login")}
-            </Link>
+                </div>
+                {t("nav.login") || (locale === "zh" ? "登录" : "Log in")}
+              </Link>
+            )}
           </div>
         )}
       </div>

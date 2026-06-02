@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { User, Key, Eye, EyeOff, ToggleLeft, ToggleRight, Loader2, LogOut } from "lucide-react";
+import axios from "axios";
+import { User, Key, Eye, EyeOff, ToggleLeft, ToggleRight, Loader2 } from "lucide-react";
 import { useLocale } from "@/components/LocaleProvider";
 import api from "@/lib/api";
 import type { UserInfo } from "@/types";
@@ -21,13 +22,17 @@ export default function ProfilePage() {
       try {
         const res = await api.user.info();
         setUser(res.data);
-      } catch {
-        setErrorMsg("加载失败");
+      } catch (e: unknown) {
+        if (axios.isAxiosError(e) && e.response?.status === 401) {
+          router.replace("/sign");
+        } else {
+          setErrorMsg("加载失败");
+        }
       } finally {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [router]);
 
   const handleToggleAdult = async () => {
     try {

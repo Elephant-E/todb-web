@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { type AxiosRequestConfig } from "axios";
 import type {
   VideoListItem,
   VideoDetail,
@@ -36,10 +36,15 @@ const webClient = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+type AuthRequestConfig = AxiosRequestConfig & {
+  skipAuthRedirect?: boolean;
+};
+
 webClient.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const config = err.config as AuthRequestConfig | undefined;
+    if (err.response?.status === 401 && !config?.skipAuthRedirect) {
       if (typeof window !== "undefined" && !window.location.pathname.includes("/sign")) {
         window.location.href = "/sign";
       }
@@ -60,7 +65,8 @@ export const api = {
   },
 
   user: {
-    info: () => webClient.get<UserInfo>("/user/info"),
+    info: (options?: { skipAuthRedirect?: boolean }) =>
+      webClient.get<UserInfo>("/user/info", { skipAuthRedirect: options?.skipAuthRedirect } as AuthRequestConfig),
     updateAdult: () => webClient.put<{ show_adult: boolean }>("/user/adult"),
     generateApiKey: () => webClient.patch<{ api_key: string }>("/user/key"),
   },
