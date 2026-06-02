@@ -1,6 +1,7 @@
 "use client";
 
-import { Suspense, useState, useRef, useCallback } from "react";
+import { Suspense, useState, useCallback } from "react";
+import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronDown, Loader2, Users, X } from "lucide-react";
@@ -85,20 +86,17 @@ function PeopleContent() {
   );
 
   const filtersKey = `${searchName}-${isVirtual}`;
-  const filtersRef = useRef({ searchName, isVirtual });
-  filtersRef.current = { searchName, isVirtual };
 
   const fetchPage = useCallback(async (page: number, pageSize: number) => {
-    const f = filtersRef.current;
     const params = {
       page,
       page_size: pageSize,
-      ...(f.searchName && { name: f.searchName }),
-      ...(f.isVirtual !== undefined && { is_virtual: f.isVirtual }),
+      ...(searchName && { name: searchName }),
+      ...(isVirtual !== undefined && { is_virtual: isVirtual }),
     };
     const res = await api.person.list(params);
     return { items: res.data.items, total: res.data.total };
-  }, [filtersKey]);
+  }, [isVirtual, searchName]);
 
   const { items, total, loading, loadingMore, sentinelRef, hasMore } = useInfiniteScroll<PersonListItem>({
     depsKey: filtersKey,
@@ -114,11 +112,11 @@ function PeopleContent() {
   };
 
   const handleFilterChange = (changes: { is_virtual?: boolean }) => {
-    const next = { ...filtersRef.current, ...changes };
-    setIsVirtual(next.is_virtual);
+    const nextIsVirtual = changes.is_virtual;
+    setIsVirtual(nextIsVirtual);
     const params = new URLSearchParams();
-    if (next.searchName) params.set("name", next.searchName);
-    if (next.is_virtual !== undefined) params.set("is_virtual", String(next.is_virtual));
+    if (searchName) params.set("name", searchName);
+    if (nextIsVirtual !== undefined) params.set("is_virtual", String(nextIsVirtual));
     router.replace(`/people?${params.toString()}`, { scroll: false });
   };
 
@@ -170,11 +168,13 @@ function PeopleContent() {
                       >
                         <div className="relative aspect-square rounded-xl overflow-hidden bg-bg-card group-hover:shadow-elevated">
                           {img ? (
-                            <img
+                            <Image
                               src={img}
                               alt={person.name}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                              loading="lazy"
+                              fill
+                              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                              unoptimized
+                              className="object-cover transition-transform duration-500 group-hover:scale-105"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">

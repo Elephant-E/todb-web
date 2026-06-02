@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import { Loader2, Music, Disc3, X, Search, ImageIcon } from "lucide-react";
 import { useLocale } from "@/components/LocaleProvider";
 import { Modal } from "@/components/Modal";
@@ -49,10 +50,6 @@ export function AddMusicModal({ open, onClose, onSuccess }: AddMusicModalProps) 
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (!open) reset();
-  }, [open]);
-
   const reset = () => {
     setName(""); setDescription(""); setTagline(""); setReleaseDate("");
     setIsrc(""); setDurationMin(""); setDurationSec(""); setUpc(""); setReleaseCompany("");
@@ -60,6 +57,12 @@ export function AddMusicModal({ open, onClose, onSuccess }: AddMusicModalProps) 
     setImagePoster(null); setImagePreview(null); setUploading(false);
     setSelectedArtists([]); setArtistSearch(""); setSearchResults([]);
   };
+
+  useEffect(() => {
+    if (open) return;
+    const timer = window.setTimeout(reset, 0);
+    return () => window.clearTimeout(timer);
+  }, [open]);
 
   const handleModeChange = (m: "song" | "album") => {
     setMode(m);
@@ -196,7 +199,7 @@ export function AddMusicModal({ open, onClose, onSuccess }: AddMusicModalProps) 
                 const alreadySelected = selectedArtists.find((a) => a.person_id === p.person_id);
                 return (
                   <button key={p.person_id} type="button" onClick={() => handleSelectArtist(p)} disabled={!!alreadySelected} className={`flex items-center gap-3 w-full px-3 py-2.5 text-sm text-left transition-colors border-b border-white/[0.04] last:border-0 ${alreadySelected ? "text-white/30 cursor-default" : "text-white/70 hover:text-white hover:bg-white/[0.06]"}`}>
-                    <div className="w-8 h-8 rounded-full overflow-hidden bg-white/10 shrink-0">{avatar ? <img src={avatar} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-white/30 text-xs font-medium">{p.name[0]}</div>}</div>
+                    <div className="relative w-8 h-8 rounded-full overflow-hidden bg-white/10 shrink-0">{avatar ? <Image src={avatar} alt="" fill sizes="32px" unoptimized className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-white/30 text-xs font-medium">{p.name[0]}</div>}</div>
                     <div className="flex-1 min-w-0">
                       <span className="truncate text-white/80">{p.name}</span>
                       {p.original_name && <span className="text-white/30 text-xs ml-2 truncate">({p.original_name})</span>}
@@ -268,6 +271,7 @@ export function AddMusicModal({ open, onClose, onSuccess }: AddMusicModalProps) 
           <label className={labelCls}>{lbl("封面图", "Cover Image")}</label>
           {imagePreview ? (
             <div className="relative group rounded-xl overflow-hidden border border-white/[0.08]">
+              {/* eslint-disable-next-line @next/next/no-img-element -- blob: preview URLs are not suitable for next/image */}
               <img src={imagePreview} alt="" className="w-full h-40 object-cover" />
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                 <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className="px-4 py-2 rounded-lg text-xs font-medium bg-white text-[#111] hover:opacity-90 transition-all">

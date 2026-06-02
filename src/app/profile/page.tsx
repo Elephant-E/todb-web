@@ -87,6 +87,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-5">
               <div className="w-16 h-16 rounded-2xl overflow-hidden bg-bg-hover flex items-center justify-center">
                 {user.avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- OAuth avatars may come from arbitrary external hosts.
                   <img src={user.avatar} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <User size={28} className="text-text-tertiary" />

@@ -33,8 +33,25 @@ export function AddPersonModal({ open, onClose, onSuccess }: AddPersonModalProps
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  const reset = () => {
+    setName("");
+    setOriginalName("");
+    setBiography("");
+    setBirthday("");
+    setDeathday("");
+    setGender("");
+    setBirthplace("");
+    setHomepage("");
+    setIsVirtual(false);
+    setIsAdult(false);
+    setError("");
+    setSubmitting(false);
+  };
+
   useEffect(() => {
-    if (!open) { setName(""); setOriginalName(""); setBiography(""); setBirthday(""); setDeathday(""); setGender(""); setBirthplace(""); setHomepage(""); setIsVirtual(false); setIsAdult(false); setError(""); setSubmitting(false); }
+    if (open) return;
+    const timer = window.setTimeout(reset, 0);
+    return () => window.clearTimeout(timer);
   }, [open]);
 
   const handleSubmit = async (e: React.FormEvent) => {

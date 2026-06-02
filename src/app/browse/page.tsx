@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useRef, useCallback } from "react";
+import { Suspense, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { VideoCard } from "@/components/VideoCard";
 import { SearchBar } from "@/components/SearchBar";
@@ -26,24 +26,21 @@ function BrowseContent() {
   });
 
   const filtersKey = JSON.stringify(filters);
-  const filtersRef = useRef(filters);
-  filtersRef.current = filters;
 
   const fetchPage = useCallback(async (page: number, pageSize: number) => {
-    const f = filtersRef.current;
     const params: VideoListParams = {
       page,
       page_size: pageSize,
-      ...(f.video_type && { video_type: f.video_type }),
-      ...(f.title && { title: f.title }),
-      ...(f.status && { status: f.status as VideoListParams["status"] }),
-      ...(f.year && { year: f.year }),
-      ...(f.sort_by && { sort_by: f.sort_by as VideoListParams["sort_by"] }),
-      ...(f.sort_order && { sort_order: f.sort_order }),
+      ...(filters.video_type && { video_type: filters.video_type }),
+      ...(filters.title && { title: filters.title }),
+      ...(filters.status && { status: filters.status as VideoListParams["status"] }),
+      ...(filters.year && { year: filters.year }),
+      ...(filters.sort_by && { sort_by: filters.sort_by as VideoListParams["sort_by"] }),
+      ...(filters.sort_order && { sort_order: filters.sort_order }),
     };
     const res = await api.video.list(params);
     return { items: res.data.items, total: res.data.total };
-  }, [filtersKey]);
+  }, [filters.sort_by, filters.sort_order, filters.status, filters.title, filters.video_type, filters.year]);
 
   const { items, total, loading, loadingMore, sentinelRef, hasMore } = useInfiniteScroll<VideoListItem>({
     depsKey: filtersKey,

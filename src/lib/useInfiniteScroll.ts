@@ -34,7 +34,7 @@ export function useInfiniteScroll<T>({ pageSize = 20, depsKey, fetchPage }: UseI
     } finally {
       setLoading(false);
     }
-  }, [depsKey, fetchPage, pageSize]);
+  }, [fetchPage, pageSize]);
 
   const loadMore = useCallback(async () => {
     if (loadingMoreRef.current) return;
@@ -55,9 +55,14 @@ export function useInfiniteScroll<T>({ pageSize = 20, depsKey, fetchPage }: UseI
       loadingMoreRef.current = false;
       setLoadingMore(false);
     }
-  }, [depsKey, fetchPage, pageSize]);
+  }, [fetchPage, pageSize]);
 
-  useEffect(() => { void fetchFirst(); }, [fetchFirst]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchFirst();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchFirst]);
 
   useEffect(() => {
     const el = sentinelRef.current;

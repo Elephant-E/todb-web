@@ -27,7 +27,13 @@ export default function EpisodeModals({ showEdit, showDelete, showAdd, editEpiso
   const [newEpisodes, setNewEpisodes] = useState<Array<{ episode_number: string; episode_title: string; date_air: string; runtime_min: string; runtime_sec: string }>>([{ episode_number: "1", episode_title: "", date_air: "", runtime_min: "", runtime_sec: "" }]);
   const [addingEpisodes, setAddingEpisodes] = useState(false);
 
-  useEffect(() => { if (showEdit && editEpisode && !currentEditEpisode) setCurrentEditEpisode(editEpisode); }, [showEdit, editEpisode, currentEditEpisode]);
+  useEffect(() => {
+    if (!showEdit || !editEpisode || currentEditEpisode) return;
+    const timer = window.setTimeout(() => {
+      setCurrentEditEpisode(editEpisode);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [showEdit, editEpisode, currentEditEpisode]);
 
   const handleEdit = async () => {
     if (!currentEditEpisode || seasonNumber == null) return;
@@ -46,7 +52,7 @@ export default function EpisodeModals({ showEdit, showDelete, showAdd, editEpiso
     const items = newEpisodes.filter((e) => e.episode_number && e.episode_title).map((e) => ({ episode_number: Number(e.episode_number), episode_title: e.episode_title, date_air: e.date_air || "1970-01-01", runtime: (Number(e.runtime_min) + Number(e.runtime_sec) / 60) || undefined }));
     if (items.length === 0) return;
     setAddingEpisodes(true);
-    try { await api.video.episode.createAll(videoId, seasonNumber, items as any); const r = await api.video.episode.all(videoId, seasonNumber); onEpisodesChange(r.data); onCloseAdd(); setNewEpisodes([{ episode_number: "1", episode_title: "", date_air: "", runtime_min: "", runtime_sec: "" }]); } catch {} finally { setAddingEpisodes(false); }
+    try { await api.video.episode.createAll(videoId, seasonNumber, items); const r = await api.video.episode.all(videoId, seasonNumber); onEpisodesChange(r.data); onCloseAdd(); setNewEpisodes([{ episode_number: "1", episode_title: "", date_air: "", runtime_min: "", runtime_sec: "" }]); } catch {} finally { setAddingEpisodes(false); }
   };
 
   const handleCloseEdit = () => { onCloseEdit(); setCurrentEditEpisode(null); };

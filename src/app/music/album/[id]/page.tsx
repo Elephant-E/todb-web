@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
-  Disc3, Calendar, Music, Clock, Loader2, Tag, Users,
+  Disc3, Calendar, Music, Clock, Loader2, Users,
 } from "lucide-react";
-import { posterUrl, backdropUrl, formatDate } from "@/lib/utils";
+import { posterUrl, backdropUrl } from "@/lib/utils";
 import { useLocale } from "@/components/LocaleProvider";
 import { useDetailColors } from "@/lib/useDetailColors";
 import DetailHero from "@/components/DetailHero";
@@ -37,16 +38,15 @@ export default function AlbumDetailPage() {
   const router = useRouter();
   const { locale } = useLocale();
   const albumId = Number(id);
+  const isValidId = !isNaN(albumId) && albumId > 0;
   const l = locale === "zh" ? ZH : EN;
 
   const [detail, setDetail] = useState<MusicAlbumDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  const isValidId = !isNaN(albumId) && albumId > 0;
+  const [loading, setLoading] = useState(isValidId);
+  const [error, setError] = useState(!isValidId);
 
   useEffect(() => {
-    if (!isValidId) { setLoading(false); setError(true); return; }
+    if (!isValidId) return;
     (async () => {
       try {
         const res = await api.music.album.detail(albumId);
@@ -90,7 +90,7 @@ export default function AlbumDetailPage() {
         onBack={() => router.back()}
         backLabel={l.back}
         posterSlot={
-          poster ? <img src={poster} alt={detail.name} className={`w-[200px] md:w-[260px] aspect-square rounded-2xl shadow-elevated object-cover ${c.posterB}`} /> : <div className={`w-[200px] md:w-[260px] aspect-square rounded-2xl ${c.posterBg} ${c.posterB} flex items-center justify-center`}><Disc3 size={48} className={c.posterIc} /></div>
+          poster ? <Image src={poster} alt={detail.name} width={260} height={260} unoptimized className={`w-[200px] md:w-[260px] aspect-square rounded-2xl shadow-elevated object-cover ${c.posterB}`} /> : <div className={`w-[200px] md:w-[260px] aspect-square rounded-2xl ${c.posterBg} ${c.posterB} flex items-center justify-center`}><Disc3 size={48} className={c.posterIc} /></div>
         }
         infoSlot={
           <div className="pt-0 md:pt-3">
@@ -123,8 +123,8 @@ export default function AlbumDetailPage() {
                     <div key={song.song_id} className="flex gap-4 p-4 rounded-xl bg-bg-hover/50 hover:bg-bg-hover transition-all group">
                       <div className="w-10 shrink-0 flex items-center justify-center text-xs font-mono text-text-tertiary">{i + 1}</div>
                       {songPoster && (
-                        <div className="w-12 h-12 shrink-0 rounded-lg overflow-hidden bg-bg-card">
-                          <img src={songPoster} alt="" className="w-full h-full object-cover" loading="lazy" />
+                        <div className="relative w-12 h-12 shrink-0 rounded-lg overflow-hidden bg-bg-card">
+                          <Image src={songPoster} alt="" fill sizes="48px" unoptimized className="object-cover" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">

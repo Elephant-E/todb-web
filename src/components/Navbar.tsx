@@ -122,6 +122,7 @@ export function Navbar() {
               <div className="flex items-center gap-3">
                 <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center overflow-hidden shrink-0">
                   {userInfo.avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- OAuth avatars may come from arbitrary external hosts.
                     <img src={userInfo.avatar} alt="" className="w-full h-full object-cover" />
                   ) : (
                     <User size={12} className="text-white/70" />
@@ -324,6 +325,7 @@ export function Navbar() {
               <Link href="/profile" className="flex items-center gap-3 px-3 py-2.5 text-[14px] font-medium text-text-tertiary hover:text-text-primary rounded-lg hover:bg-bg-hover transition-colors" onClick={() => setMobileOpen(false)}>
                 <div className="w-6 h-6 rounded-full bg-bg-input flex items-center justify-center overflow-hidden shrink-0">
                   {userInfo.avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- OAuth avatars may come from arbitrary external hosts.
                     <img src={userInfo.avatar} alt="" className="w-full h-full object-cover" />
                   ) : (
                     <User size={12} className="text-text-tertiary" />

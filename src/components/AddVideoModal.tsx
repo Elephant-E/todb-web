@@ -20,7 +20,7 @@ interface AddVideoModalProps {
 }
 
 export function AddVideoModal({ open, onClose, onSuccess }: AddVideoModalProps) {
-  const { locale, t: _t } = useLocale();
+  const { locale } = useLocale();
   const zh = locale === "zh";
 
   const [videoType, setVideoType] = useState<"tv" | "movie">("movie");
@@ -39,12 +39,15 @@ export function AddVideoModal({ open, onClose, onSuccess }: AddVideoModalProps) 
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (open) {
-      setOriginCountrys(zh ? "CN" : "US");
-      setOriginalLanguages(zh ? "zh" : "en");
-    } else {
-      setVideoType("movie"); setTitle(""); setDescription(""); setOriginTitle(""); setTagline(""); setStatus("released"); setDateAir(""); setRuntimeMin(""); setRuntimeSec(""); setIsAdult(false); setError(""); setSubmitting(false);
-    }
+    const timer = window.setTimeout(() => {
+      if (open) {
+        setOriginCountrys(zh ? "CN" : "US");
+        setOriginalLanguages(zh ? "zh" : "en");
+      } else {
+        setVideoType("movie"); setTitle(""); setDescription(""); setOriginTitle(""); setTagline(""); setStatus("released"); setDateAir(""); setRuntimeMin(""); setRuntimeSec(""); setIsAdult(false); setError(""); setSubmitting(false);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [open, zh]);
 
   const handleSubmit = async (e: React.FormEvent) => {

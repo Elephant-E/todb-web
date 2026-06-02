@@ -38,7 +38,10 @@ export function UserDropdown({ userInfo }: UserDropdownProps) {
   const { t } = useLocale();
 
   useEffect(() => {
-    setTheme(getStoredTheme());
+    const timer = window.setTimeout(() => {
+      setTheme(getStoredTheme());
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -79,6 +82,7 @@ export function UserDropdown({ userInfo }: UserDropdownProps) {
         className="w-8 h-8 rounded-full bg-bg-input flex items-center justify-center overflow-hidden hover:ring-2 hover:ring-border-secondary transition-all"
       >
         {userInfo?.avatar ? (
+          // eslint-disable-next-line @next/next/no-img-element -- OAuth avatars may come from arbitrary external hosts.
           <img src={userInfo.avatar} alt="" className="w-full h-full object-cover" />
         ) : (
           <User size={16} className="text-text-tertiary" />

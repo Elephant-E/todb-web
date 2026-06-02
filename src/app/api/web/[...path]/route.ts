@@ -94,7 +94,7 @@ async function proxyRequest(
     });
 
     return response;
-  } catch (e: unknown) {
+  } catch {
     return NextResponse.json({ error: "Upstream request failed" }, { status: 502 });
   }
 }

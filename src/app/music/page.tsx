@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { ChevronDown, Loader2, Disc3, Music, X } from "lucide-react";
 import { SearchBar } from "@/components/SearchBar";
 import { useLocale } from "@/components/LocaleProvider";
@@ -130,36 +131,32 @@ function MusicContent() {
   const pageSize = 20;
 
   const filtersKey = `${searchTitle}-${selectedTagId}-${selectedType}`;
-  const filtersRef = useRef({ searchTitle, selectedTagId, selectedType });
-  filtersRef.current = { searchTitle, selectedTagId, selectedType };
 
   useEffect(() => {
     api.music.tag.list().then((r) => setTags(r.data)).catch(() => {});
   }, []);
 
-  const buildParams = (p: number) => {
-    const f = filtersRef.current;
+  const buildParams = useCallback((p: number) => {
     return {
       page: p,
       page_size: pageSize,
-      ...(f.searchTitle && { title: f.searchTitle }),
-      ...(f.selectedTagId && { tag_id: f.selectedTagId }),
+      ...(searchTitle && { title: searchTitle }),
+      ...(selectedTagId && { tag_id: selectedTagId }),
     };
-  };
+  }, [pageSize, searchTitle, selectedTagId]);
 
   const fetchFirst = useCallback(async () => {
     setLoading(true);
     pageRef.current = 1;
     try {
-      const type = filtersRef.current.selectedType;
-      if (type === "song") {
+      if (selectedType === "song") {
         const res = await api.music.song.list(buildParams(1));
         setSongs(res.data.items);
         setAlbums([]);
         setTotal(res.data.total);
         itemsLenRef.current = res.data.items.length;
         totalRef.current = res.data.total;
-      } else if (type === "album") {
+      } else if (selectedType === "album") {
         const res = await api.music.album.list(buildParams(1));
         setAlbums(res.data.items);
         setSongs([]);
@@ -186,7 +183,7 @@ function MusicContent() {
     } finally {
       setLoading(false);
     }
-  }, [filtersKey]);
+  }, [buildParams, selectedType]);
 
   const loadMore = useCallback(async () => {
     if (loadingMoreRef.current) return;
@@ -195,11 +192,10 @@ function MusicContent() {
     setLoadingMore(true);
     const nextPage = pageRef.current + 1;
     try {
-      const type = filtersRef.current.selectedType;
-      if (type === "song") {
+      if (selectedType === "song") {
         const res = await api.music.song.list(buildParams(nextPage));
         setSongs((prev) => { const next = [...prev, ...res.data.items]; itemsLenRef.current = next.length; return next; });
-      } else if (type === "album") {
+      } else if (selectedType === "album") {
         const res = await api.music.album.list(buildParams(nextPage));
         setAlbums((prev) => { const next = [...prev, ...res.data.items]; itemsLenRef.current = next.length; return next; });
       }
@@ -208,9 +204,14 @@ function MusicContent() {
       loadingMoreRef.current = false;
       setLoadingMore(false);
     }
-  }, [filtersKey]);
+  }, [buildParams, selectedType]);
 
-  useEffect(() => { void fetchFirst(); }, [fetchFirst]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchFirst();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [fetchFirst]);
 
   useEffect(() => {
     const el = sentinelRef.current;
@@ -233,18 +234,18 @@ function MusicContent() {
   };
 
   const handleFilterChange = (changes: { tag_id?: number; type?: MusicType }) => {
-    const next = { ...filtersRef.current, ...changes };
-    setSelectedTagId(next.selectedTagId);
+    const nextTagId = Object.prototype.hasOwnProperty.call(changes, "tag_id") ? changes.tag_id : selectedTagId;
+    const nextType = changes.type !== undefined ? changes.type : selectedType;
+    setSelectedTagId(nextTagId);
     if (changes.type !== undefined) setSelectedType(changes.type);
     const params = new URLSearchParams();
-    if (next.searchTitle) params.set("title", next.searchTitle);
-    if (next.selectedTagId) params.set("tag_id", String(next.selectedTagId));
-    const nextType = changes.type !== undefined ? changes.type : filtersRef.current.selectedType;
+    if (searchTitle) params.set("title", searchTitle);
+    if (nextTagId) params.set("tag_id", String(nextTagId));
     if (nextType !== "all") params.set("type", nextType);
     router.replace(`/music?${params.toString()}`, { scroll: false });
   };
 
-  const hasMore = itemsLenRef.current < totalRef.current;
+  const hasMore = albums.length + songs.length < total;
   const title = zh ? "音乐" : "Music";
   const songsLabel = zh ? "首歌曲" : "songs";
 
@@ -291,7 +292,7 @@ function MusicContent() {
                         return (
                           <Link key={`album-${album.album_id}`} href={`/music/album/${album.album_id}`} className="group block animate-fade-in" style={{ animationDelay: `${delay}ms` }}>
                             <div className="relative aspect-square rounded-xl overflow-hidden bg-bg-card group-hover:shadow-elevated">
-                              {img ? <img src={img} alt={album.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" /> : <div className="w-full h-full flex items-center justify-center"><Disc3 size={32} className="text-text-tertiary" /></div>}
+                              {img ? <Image src={img} alt={album.name} fill sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw" unoptimized className="object-cover transition-transform duration-500 group-hover:scale-105" /> : <div className="w-full h-full flex items-center justify-center"><Disc3 size={32} className="text-text-tertiary" /></div>}
                               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                               <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
                                 <div className="flex items-center gap-2 text-xs text-white/70">
@@ -322,7 +323,7 @@ function MusicContent() {
                         return (
                           <div key={`song-${song.song_id}`} className="flex gap-4 p-4 rounded-xl bg-bg-hover/50 hover:bg-bg-hover transition-all animate-fade-in" style={{ animationDelay: `${delay}ms` }}>
                             <div className="w-10 shrink-0 flex items-center justify-center text-xs font-mono text-text-tertiary">{i + 1}</div>
-                            {img && <div className="w-12 h-12 shrink-0 rounded-lg overflow-hidden bg-bg-card"><img src={img} alt="" className="w-full h-full object-cover" loading="lazy" /></div>}
+                            {img && <div className="relative w-12 h-12 shrink-0 rounded-lg overflow-hidden bg-bg-card"><Image src={img} alt="" fill sizes="48px" unoptimized className="object-cover" /></div>}
                             <div className="flex-1 min-w-0">
                               <h4 className="text-sm font-medium text-text-primary truncate">{song.name}</h4>
                               <div className="flex items-center gap-3 text-xs text-text-tertiary mt-0.5">

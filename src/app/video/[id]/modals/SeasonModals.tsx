@@ -26,7 +26,13 @@ export default function SeasonModals({ showAdd, showEdit, showDelete, editSeason
   const [savingSeason, setSavingSeason] = useState(false);
   const [deletingSeason, setDeletingSeason] = useState(false);
 
-  useEffect(() => { if (showEdit && editSeason && !currentEditSeason) setCurrentEditSeason(editSeason); }, [showEdit, editSeason, currentEditSeason]);
+  useEffect(() => {
+    if (!showEdit || !editSeason || currentEditSeason) return;
+    const timer = window.setTimeout(() => {
+      setCurrentEditSeason(editSeason);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [showEdit, editSeason, currentEditSeason]);
 
   const handleAdd = async () => {
     const sn = Number(newSeason.season_number); if (!sn) return;

@@ -20,8 +20,11 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>("zh");
 
   useEffect(() => {
-    const saved = localStorage.getItem("locale") as Locale | null;
-    if (saved === "zh" || saved === "en") setLocaleState(saved);
+    const timer = window.setTimeout(() => {
+      const saved = localStorage.getItem("locale") as Locale | null;
+      if (saved === "zh" || saved === "en") setLocaleState(saved);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const setLocale = useCallback((l: Locale) => {
