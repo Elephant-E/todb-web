@@ -1,10 +1,10 @@
 "use client";
 
-import { Suspense, useState, useRef, useCallback } from "react";
+import { Suspense, useState, useCallback } from "react";
 import { VideoCard } from "@/components/VideoCard";
 import { SearchBar } from "@/components/SearchBar";
 import { FilterPanel } from "@/components/FilterPanel";
-import { Loader2 } from "lucide-react";
+import { Loader2, Film } from "lucide-react";
 import { useLocale } from "@/components/LocaleProvider";
 import { useInfiniteScroll } from "@/lib/useInfiniteScroll";
 import api from "@/lib/api";
@@ -26,23 +26,20 @@ function CategoryContent({ videoType, title }: CategoryPageProps) {
   });
 
   const filtersKey = JSON.stringify(filters);
-  const filtersRef = useRef(filters);
-  filtersRef.current = filters;
 
   const fetchPage = useCallback(async (page: number, pageSize: number) => {
-    const f = filtersRef.current;
     const params: VideoListParams = {
       page,
       page_size: pageSize,
       video_type: videoType,
-      ...(f.status && { status: f.status as VideoListParams["status"] }),
-      ...(f.year && { year: f.year }),
-      ...(f.sort_by && { sort_by: f.sort_by as VideoListParams["sort_by"] }),
-      ...(f.sort_order && { sort_order: f.sort_order }),
+      ...(filters.status && { status: filters.status as VideoListParams["status"] }),
+      ...(filters.year && { year: filters.year }),
+      ...(filters.sort_by && { sort_by: filters.sort_by as VideoListParams["sort_by"] }),
+      ...(filters.sort_order && { sort_order: filters.sort_order }),
     };
     const res = await api.video.list(params);
     return { items: res.data.items, total: res.data.total };
-  }, [videoType, filtersKey]);
+  }, [videoType, filters.status, filters.year, filters.sort_by, filters.sort_order]);
 
   const { items, total, loading, loadingMore, sentinelRef, hasMore } = useInfiniteScroll<VideoListItem>({
     depsKey: `${videoType}-${filtersKey}`,
@@ -79,11 +76,20 @@ function CategoryContent({ videoType, title }: CategoryPageProps) {
 
           <div className="flex-1 min-w-0">
             {loading ? (
-              <div className="flex items-center justify-center py-24">
-                <Loader2 size={24} className="text-text-tertiary animate-spin" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {Array.from({ length: 15 }).map((_, i) => (
+                  <div key={i} className="animate-pulse flex flex-col gap-2">
+                    <div className="aspect-[2/3] w-full rounded-xl bg-bg-hover"></div>
+                    <div className="h-4 w-3/4 rounded bg-bg-hover mt-1"></div>
+                    <div className="h-3 w-1/2 rounded bg-bg-hover"></div>
+                  </div>
+                ))}
               </div>
             ) : items.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 text-text-tertiary">
+              <div className="flex flex-col items-center justify-center py-24 text-text-tertiary animate-fade-in">
+                <div className="rounded-full bg-bg-hover p-4 mb-4">
+                  <Film className="h-8 w-8 opacity-50" />
+                </div>
                 <p className="text-sm">{t("browse.noResult")}</p>
               </div>
             ) : (

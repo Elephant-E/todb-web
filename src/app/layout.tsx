@@ -17,8 +17,36 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Todb — Video Metadata Database",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://theotherdb.org"),
+  title: {
+    template: "%s | Todb",
+    default: "Todb — Video Metadata Database",
+  },
   description: "Discover and explore video metadata. A comprehensive database of movies and TV shows.",
+  keywords: ["Todb", "TMDB", "movies", "TV shows", "metadata", "影视数据库", "影视元数据"],
+  openGraph: {
+    title: {
+      template: "%s | Todb",
+      default: "Todb — Video Metadata Database",
+    },
+    description: "Discover and explore video metadata. A comprehensive database of movies and TV shows.",
+    url: "/",
+    siteName: "Todb",
+    locale: "zh_CN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: {
+      template: "%s | Todb",
+      default: "Todb — Video Metadata Database",
+    },
+    description: "Discover and explore video metadata. A comprehensive database of movies and TV shows.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 const themeScript = `
