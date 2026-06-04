@@ -9,13 +9,14 @@
 - **图标**: Lucide React
 - **数据请求**: Axios
 - **动画**: Motion (Framer Motion)
+- **包管理器**: pnpm
 
 ## 开发环境搭建
 
 ### 1. 安装依赖
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 2. 配置认证
@@ -38,10 +39,29 @@ NEXT_PUBLIC_WEB_URL=/api/web
 ### 3. 启动开发服务器
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 访问 [http://localhost:3000](http://localhost:3000)。
+
+## Vercel 部署
+
+推荐使用 Vercel 部署本项目。构建配置：
+
+- Install Command: `pnpm install --frozen-lockfile`
+- Build Command: `pnpm build`
+- Output Directory: 使用 Vercel 默认 Next.js 输出
+
+建议配置环境变量：
+
+```env
+NEXT_PUBLIC_SITE_URL=https://你的域名
+NEXT_PUBLIC_WEB_URL=/api/web
+NEXT_PUBLIC_API_URL=https://api.theotherdb.org
+UPSTREAM_API_URL=https://theotherdb.org/api
+```
+
+生产环境默认通过 `/api/web` 代理转发 Web API 请求，可避免浏览器端 CORS 问题。登录回调域名需要在后端账户系统中允许。
 
 ## 项目结构
 
