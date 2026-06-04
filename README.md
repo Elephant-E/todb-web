@@ -25,6 +25,7 @@ npm install
 1. 浏览器访问 [https://theotherdb.org/api/sign](https://theotherdb.org/api/sign) 登录
 2. 授权完成后会返回 `https://theotherdb.org/?api_key=1005_xxxx`
 3. 前端读取 `api_key` 并保存，随后所有 Web API 请求会自动带上 `Authorization: Bearer <api_key>`
+4. 开发时，在控制台使用  `localStorage.setItem("todb_api_key", "你的token")` 来写入token
 
 本地开发如需通过 Next.js 代理转发 API 请求，可在 `.env.local` 中配置：
 
