@@ -18,21 +18,21 @@
 npm install
 ```
 
-### 2. 配置 Cookie
+### 2. 配置认证
 
-本项目通过 Cookie 认证与后端 API 通信。Cookie 过期后需要手动更新：
+本项目通过 Bearer Token 与后端 API 通信。登录完成后，后端会跳转回首页并在 URL 中携带 `api_key`，前端会自动保存到 `localStorage`：
 
 1. 浏览器访问 [https://theotherdb.org/api/sign](https://theotherdb.org/api/sign) 登录
-2. 登录后访问 [https://theotherdb.org/api/sign/check](https://theotherdb.org/api/sign/check) 确认登录状态
-3. 打开浏览器开发者工具 → Application → Cookies，找到 `theotherdb_org_session` 的值
-4. 将该值填入 `.env.local` 文件：
+2. 授权完成后会返回 `https://theotherdb.org/?api_key=1005_xxxx`
+3. 前端读取 `api_key` 并保存，随后所有 Web API 请求会自动带上 `Authorization: Bearer <api_key>`
+
+本地开发如需通过 Next.js 代理转发 API 请求，可在 `.env.local` 中配置：
 
 ```env
 NEXT_PUBLIC_WEB_URL=/api/web
-DEV_SESSION_COOKIE=你的session_cookie值
 ```
 
-> ⚠️ Cookie 会定期过期，开发时如遇 401 错误，请重复上述步骤更新 Cookie。
+> Token 过期后后端会返回 401，前端会清理本地 token 并要求重新登录。
 
 ### 3. 启动开发服务器
 
@@ -141,7 +141,7 @@ src/
 
 ## API 覆盖
 
-- **Cookie 认证 API**: 59 个端点（影视/人物/音乐/图片/用户/同步/字典）
+- **Web Token 认证 API**: 59 个端点（影视/人物/音乐/图片/用户/同步/字典）
 - **Token 认证 API**: 15 个端点（公开数据查询）
 - **总计**: 74 个端点
 

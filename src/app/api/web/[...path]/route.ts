@@ -1,48 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const UPSTREAM = process.env.UPSTREAM_API_URL || "https://theotherdb.org/api";
-const DEV_SESSION = process.env.DEV_SESSION_COOKIE || "";
-
-function buildCookieHeader(request: NextRequest): { cookieHeader: string; usedDevSession: boolean } {
-  const parts: string[] = [];
-  let usedDevSession = false;
-
-  if (DEV_SESSION) {
-    parts.push(`session=${DEV_SESSION}`);
-    usedDevSession = true;
-  } else {
-    const localSession = request.cookies.get("session")?.value;
-    if (localSession) {
-      parts.push(`session=${localSession}`);
-    }
-  }
-
-  const cf = request.cookies.get("cf_clearance")?.value;
-  if (cf) parts.push(`cf_clearance=${cf}`);
-
-  return { cookieHeader: parts.join("; "), usedDevSession };
-}
-
-function rewriteCookie(raw: string, request: NextRequest): string | null {
-  const parts = raw.split(";").map((p) => p.trim());
-  const nameValue = parts[0];
-  if (!nameValue) return null;
-
-  let sameSite = "";
-  for (const p of parts) {
-    if (p.toLowerCase().startsWith("samesite=")) {
-      const val = p.split("=")[1]?.toLowerCase();
-      if (val === "lax" || val === "strict") {
-        sameSite = `SameSite=${val.charAt(0).toUpperCase() + val.slice(1)}`;
-      }
-    }
-  }
-
-  const isSecure = request.nextUrl.protocol === "https:";
-  return [nameValue, "Path=/", sameSite, isSecure ? "Secure" : "", "HttpOnly"]
-    .filter(Boolean)
-    .join("; ");
-}
 
 async function proxyRequest(
   method: string,
@@ -58,8 +16,8 @@ async function proxyRequest(
   else if (method !== "GET" && method !== "DELETE") headers.set("Content-Type", "application/json");
   else headers.set("Accept", "application/json");
 
-  const { cookieHeader, usedDevSession } = buildCookieHeader(request);
-  if (cookieHeader) headers.set("Cookie", cookieHeader);
+  const authorization = request.headers.get("authorization");
+  if (authorization) headers.set("Authorization", authorization);
 
   try {
     const body = method !== "GET" && method !== "DELETE" ? await request.arrayBuffer() : undefined;
@@ -68,14 +26,6 @@ async function proxyRequest(
     if (res.status === 301 || res.status === 302) {
       const location = res.headers.get("location") || "/";
       const redirectRes = NextResponse.redirect(new URL(location, request.url));
-      if (!usedDevSession) {
-        res.headers.forEach((value, key) => {
-          if (key === "set-cookie") {
-            const rewritten = rewriteCookie(value, request);
-            if (rewritten) redirectRes.headers.append("set-cookie", rewritten);
-          }
-        });
-      }
       return redirectRes;
     }
 
@@ -83,12 +33,7 @@ async function proxyRequest(
     const response = new NextResponse(responseBody, { status: res.status, statusText: res.statusText });
 
     res.headers.forEach((value, key) => {
-      if (key === "set-cookie") {
-        if (!usedDevSession) {
-          const rewritten = rewriteCookie(value, request);
-          if (rewritten) response.headers.append("set-cookie", rewritten);
-        }
-      } else if (!["content-encoding", "content-length", "transfer-encoding"].includes(key.toLowerCase())) {
+      if (!["content-encoding", "content-length", "transfer-encoding", "set-cookie"].includes(key.toLowerCase())) {
         response.headers.set(key, value);
       }
     });

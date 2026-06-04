@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { User, Settings, LogOut, Sun, Moon, Monitor, Code2 } from "lucide-react";
 import { useLocale } from "@/components/LocaleProvider";
+import { clearAuthToken } from "@/lib/auth-token";
 
 type Theme = "light" | "dark" | "system";
 
@@ -71,7 +72,7 @@ export function UserDropdown({ userInfo }: UserDropdownProps) {
   };
 
   const handleLogout = () => {
-    document.cookie = "session=; path=/; max-age=0";
+    clearAuthToken();
     window.location.href = "/";
   };
 

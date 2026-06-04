@@ -5,6 +5,7 @@ import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { LocaleProvider } from "@/components/LocaleProvider";
+import { AuthCallbackHandler } from "@/components/AuthCallbackHandler";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -78,6 +79,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-bg-primary text-text-primary">
         <LocaleProvider>
+          <AuthCallbackHandler />
           <Suspense>
             <Navbar />
           </Suspense>

@@ -1,4 +1,5 @@
 import axios, { type AxiosRequestConfig } from "axios";
+import { clearAuthToken, getAuthToken } from "@/lib/auth-token";
 import type {
   VideoListItem,
   VideoDetail,
@@ -32,7 +33,6 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.theotherdb.org"
 
 const webClient = axios.create({
   baseURL: WEB_BASE,
-  withCredentials: true,
   headers: { "Content-Type": "application/json" },
 });
 
@@ -40,12 +40,21 @@ type AuthRequestConfig = AxiosRequestConfig & {
   skipAuthRedirect?: boolean;
 };
 
+webClient.interceptors.request.use((config) => {
+  const token = getAuthToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 webClient.interceptors.response.use(
   (res) => res,
   (err) => {
     const config = err.config as AuthRequestConfig | undefined;
-    if (err.response?.status === 401 && !config?.skipAuthRedirect) {
-      if (typeof window !== "undefined" && !window.location.pathname.includes("/sign")) {
+    if (err.response?.status === 401) {
+      clearAuthToken();
+      if (!config?.skipAuthRedirect && typeof window !== "undefined" && !window.location.pathname.includes("/sign")) {
         window.location.href = "/sign";
       }
     }

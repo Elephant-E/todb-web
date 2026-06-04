@@ -349,11 +349,11 @@ export default function HomePage() {
               <h2 className="text-3xl font-bold tracking-tight mb-3">RESTful API</h2>
               <p className="text-text-secondary mb-6 leading-relaxed">
                 完整的 Web API 和独立的 Token API，覆盖所有数据操作。
-                Cookie 认证用于 Web 端，Bearer Token 用于外部集成。
+                Bearer Token 用于 Web 端和外部集成。
               </p>
               <div className="space-y-3">
                 {[
-                  { icon: Code2, title: "Web API", desc: "Cookie 认证，用于前端界面操作" },
+                  { icon: Code2, title: "Web API", desc: "Bearer Token 认证，用于前端界面操作" },
                   { icon: Zap, title: "Token API", desc: "Bearer Token，用于外部程序调用" },
                   { icon: Shield, title: "角色权限", desc: "view / edit / admin 三级权限控制" },
                 ].map((item) => (

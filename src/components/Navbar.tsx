@@ -11,6 +11,7 @@ import { AddMusicModal } from "@/components/AddMusicModal";
 import { NotificationPopover } from "@/components/NotificationPopover";
 import { useLocale } from "@/components/LocaleProvider";
 import api from "@/lib/api";
+import { getAuthToken } from "@/lib/auth-token";
 import type { UserInfo } from "@/types";
 
 export function Navbar() {
@@ -33,12 +34,23 @@ export function Navbar() {
   const isHome = pathname === "/";
 
   useEffect(() => {
-    (async () => {
+    const loadUserInfo = async () => {
+      if (!getAuthToken()) {
+        setUserInfo(null);
+        return;
+      }
+
       try {
         const res = await api.user.info({ skipAuthRedirect: true });
         setUserInfo(res.data);
-      } catch {}
-    })();
+      } catch {
+        setUserInfo(null);
+      }
+    };
+
+    loadUserInfo();
+    window.addEventListener("todb-auth-change", loadUserInfo);
+    return () => window.removeEventListener("todb-auth-change", loadUserInfo);
   }, []);
 
   useEffect(() => {
