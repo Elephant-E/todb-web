@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState, useCallback } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { VideoCard } from "@/components/VideoCard";
 import { SearchBar } from "@/components/SearchBar";
 import { FilterPanel } from "@/components/FilterPanel";
@@ -16,13 +17,17 @@ interface CategoryPageProps {
 }
 
 function CategoryContent({ videoType, title }: CategoryPageProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { t } = useLocale();
 
   const [filters, setFilters] = useState({
-    status: undefined as string | undefined,
-    year: undefined as string | undefined,
-    sort_by: undefined as string | undefined,
-    sort_order: undefined as "asc" | "desc" | undefined,
+    title: (searchParams.get("title") as string) || undefined,
+    status: (searchParams.get("status") as string) || undefined,
+    year: (searchParams.get("year") as string) || undefined,
+    sort_by: (searchParams.get("sort_by") as string) || undefined,
+    sort_order: (searchParams.get("sort_order") as "asc" | "desc") || undefined,
   });
 
   const filtersKey = JSON.stringify(filters);
@@ -32,6 +37,7 @@ function CategoryContent({ videoType, title }: CategoryPageProps) {
       page,
       page_size: pageSize,
       video_type: videoType,
+      ...(filters.title && { title: filters.title }),
       ...(filters.status && { status: filters.status as VideoListParams["status"] }),
       ...(filters.year && { year: filters.year }),
       ...(filters.sort_by && { sort_by: filters.sort_by as VideoListParams["sort_by"] }),
@@ -39,7 +45,7 @@ function CategoryContent({ videoType, title }: CategoryPageProps) {
     };
     const res = await api.video.list(params);
     return { items: res.data.items, total: res.data.total };
-  }, [videoType, filters.status, filters.year, filters.sort_by, filters.sort_order]);
+  }, [videoType, filters.title, filters.status, filters.year, filters.sort_by, filters.sort_order]);
 
   const { items, total, loading, loadingMore, sentinelRef, hasMore } = useInfiniteScroll<VideoListItem>({
     depsKey: `${videoType}-${filtersKey}`,
@@ -47,11 +53,22 @@ function CategoryContent({ videoType, title }: CategoryPageProps) {
   });
 
   const handleFilterChange = (changes: Record<string, string | undefined>) => {
-    setFilters((prev) => ({ ...prev, ...changes }));
+    const next = { ...filters, ...changes };
+    setFilters(next);
+
+    const params = new URLSearchParams();
+    if (next.title) params.set("title", next.title);
+    if (next.status) params.set("status", next.status);
+    if (next.year) params.set("year", next.year);
+    if (next.sort_by) params.set("sort_by", next.sort_by);
+    if (next.sort_order) params.set("sort_order", next.sort_order);
+
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   };
 
   const handleSearch = (value: string) => {
-    setFilters((prev) => ({ ...prev, status: value ? undefined : prev.status }));
+    handleFilterChange({ title: value || undefined });
   };
 
   return (
@@ -64,7 +81,7 @@ function CategoryContent({ videoType, title }: CategoryPageProps) {
               {loading ? "..." : t("browse.total", { count: total })}
             </p>
           </div>
-          <SearchBar initialValue="" onSearch={handleSearch} placeholder={t("nav.search")} />
+          <SearchBar initialValue={filters.title || ""} onSearch={handleSearch} placeholder={t("nav.search")} />
         </div>
 
         <div className="flex gap-5">
