@@ -23,6 +23,30 @@
 # misc
 .DS_Store
 *.pem
+*.key
+
+# shell configs (sandbox stubs)
+.bash_profile
+.bashrc
+.profile
+.zprofile
+.zshrc
+
+# git configs (sandbox stubs)
+.gitconfig
+.gitmodules
+
+# IDE / editor
+.idea
+.vscode
+
+# tool configs (sandbox stubs)
+.mcp.json
+.ripgreprc
+
+# claude / AI agent
+.claude
+.claude.bak
 
 # debug
 npm-debug.log*

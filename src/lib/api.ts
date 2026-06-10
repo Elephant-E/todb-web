@@ -54,7 +54,9 @@ webClient.interceptors.response.use(
     const config = err.config as AuthRequestConfig | undefined;
     if (err.response?.status === 401) {
       clearAuthToken();
-      if (!config?.skipAuthRedirect && typeof window !== "undefined" && !window.location.pathname.includes("/sign")) {
+      // GET requests are public — never redirect to login
+      const method = (config?.method || "").toLowerCase();
+      if (method !== "get" && !config?.skipAuthRedirect && typeof window !== "undefined" && !window.location.pathname.includes("/sign")) {
         window.location.href = "/sign";
       }
     }
