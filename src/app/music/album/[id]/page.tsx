@@ -12,7 +12,7 @@ import { useLocale } from "@/components/LocaleProvider";
 import { useDetailColors } from "@/lib/useDetailColors";
 import DetailHero from "@/components/DetailHero";
 import api from "@/lib/api";
-import type { MusicAlbumDetail } from "@/types";
+import type { MusicAlbumDetail, MusicSong } from "@/types";
 
 const ZH = {
   back: "返回",
@@ -42,6 +42,7 @@ export default function AlbumDetailPage() {
   const l = locale === "zh" ? ZH : EN;
 
   const [detail, setDetail] = useState<MusicAlbumDetail | null>(null);
+  const [songs, setSongs] = useState<MusicSong[]>([]);
   const [loading, setLoading] = useState(isValidId);
   const [error, setError] = useState(!isValidId);
 
@@ -49,8 +50,12 @@ export default function AlbumDetailPage() {
     if (!isValidId) return;
     (async () => {
       try {
-        const res = await api.music.album.detail(albumId);
-        setDetail(res.data);
+        const [detailRes, songsRes] = await Promise.all([
+          api.music.album.detail(albumId),
+          api.music.album.songs(albumId),
+        ]);
+        setDetail(detailRes.data);
+        setSongs(Array.isArray(songsRes.data) ? songsRes.data : []);
       } catch { setError(true); } finally { setLoading(false); }
     })();
   }, [isValidId, albumId]);
@@ -102,7 +107,7 @@ export default function AlbumDetailPage() {
               {detail.release_date && (
                 <span className="flex items-center gap-1.5"><Calendar size={14} /> {detail.release_date.slice(0, 4)}</span>
               )}
-              <span className="flex items-center gap-1.5"><Music size={14} /> {detail.song_count} {l.songs}</span>
+              <span className="flex items-center gap-1.5"><Music size={14} /> {detail.count_song} {l.songs}</span>
               {detail.is_adult && <span>18+</span>}
             </div>
           </div>
@@ -113,11 +118,11 @@ export default function AlbumDetailPage() {
         <div className="max-w-[1400px] mx-auto space-y-8">
           <div>
             <h3 className="text-xs font-semibold text-text-tertiary uppercase tracking-[0.06em] mb-4">{l.songs}</h3>
-            {detail.songs.length === 0 ? (
+            {songs.length === 0 ? (
               <p className="text-sm text-text-tertiary">{l.noSongs}</p>
             ) : (
               <div className="space-y-2">
-                {detail.songs.map((song, i) => {
+                {songs.map((song, i) => {
                   const songPoster = posterUrl(song.image_poster, "w185");
                   return (
                     <div key={song.song_id} className="flex gap-4 p-4 rounded-xl bg-bg-hover/50 hover:bg-bg-hover transition-all group">

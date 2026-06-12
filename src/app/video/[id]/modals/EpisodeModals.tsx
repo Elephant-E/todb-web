@@ -63,9 +63,9 @@ export default function EpisodeModals({ showEdit, showDelete, showAdd, editEpiso
       <Modal open={showEdit} onClose={handleCloseEdit} title={l.editEpisode}>
         {currentEditEpisode && <>
           <div><label className={mLabel}>{l.episodeNumber}</label><input type="text" inputMode="numeric" min={1} value={currentEditEpisode.episode_number} onChange={(e) => setCurrentEditEpisode((p) => p ? { ...p, episode_number: Number(e.target.value) || 0 } : p)} className={mInput} /></div>
-          <div><label className={mLabel}>{l.episodeTitle}</label><input type="text" value={currentEditEpisode.episode_title} onChange={(e) => setCurrentEditEpisode((p) => p ? { ...p, episode_title: e.target.value } : p)} className={mInput} /></div>
-          <div><label className={mLabel}>{l.seasonDesc}</label><input type="text" value={currentEditEpisode.episode_description} onChange={(e) => setCurrentEditEpisode((p) => p ? { ...p, episode_description: e.target.value } : p)} className={mInput} /></div>
-          <div><label className={mLabel}>{l.dateAir}</label><input type="date" value={currentEditEpisode.date_air} onChange={(e) => setCurrentEditEpisode((p) => p ? { ...p, date_air: e.target.value } : p)} className={mInput} /></div>
+          <div><label className={mLabel}>{l.episodeTitle}</label><input type="text" value={currentEditEpisode.episode_title ?? ""} onChange={(e) => setCurrentEditEpisode((p) => p ? { ...p, episode_title: e.target.value } : p)} className={mInput} /></div>
+          <div><label className={mLabel}>{l.seasonDesc}</label><input type="text" value={currentEditEpisode.episode_description ?? ""} onChange={(e) => setCurrentEditEpisode((p) => p ? { ...p, episode_description: e.target.value } : p)} className={mInput} /></div>
+          <div><label className={mLabel}>{l.dateAir}</label><input type="date" value={currentEditEpisode.date_air ?? ""} onChange={(e) => setCurrentEditEpisode((p) => p ? { ...p, date_air: e.target.value } : p)} className={mInput} /></div>
           <div>
             <label className={mLabel}>{l.runtime}</label>
             <div className="flex gap-2 items-center">
@@ -100,7 +100,7 @@ export default function EpisodeModals({ showEdit, showDelete, showAdd, editEpiso
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="text-xs font-medium text-white/50 mb-1 block">{l.episodeNumber}</label><input type="text" inputMode="numeric" min={1} value={ep.episode_number} onChange={(e) => { const n = [...newEpisodes]; n[i] = { ...n[i], episode_number: e.target.value }; setNewEpisodes(n); }} className={mInput} /></div>
                 <div><label className="text-xs font-medium text-white/50 mb-1 block">{l.episodeTitle}</label><input type="text" value={ep.episode_title} onChange={(e) => { const n = [...newEpisodes]; n[i] = { ...n[i], episode_title: e.target.value }; setNewEpisodes(n); }} className={mInput} /></div>
-                <div><label className="text-xs font-medium text-white/50 mb-1 block">{l.dateAir}</label><input type="date" value={String(ep.date_air)} onChange={(e) => { const n = [...newEpisodes]; n[i] = { ...n[i], date_air: e.target.value }; setNewEpisodes(n); }} className={mInput} /></div>
+                <div><label className="text-xs font-medium text-white/50 mb-1 block">{l.dateAir}</label><input type="date" value={ep.date_air ?? ""} onChange={(e) => { const n = [...newEpisodes]; n[i] = { ...n[i], date_air: e.target.value }; setNewEpisodes(n); }} className={mInput} /></div>
                 <div>
                   <label className="text-xs font-medium text-white/50 mb-1 block">{l.runtime}</label>
                   <div className="flex gap-2 items-center">

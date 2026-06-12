@@ -16,7 +16,7 @@ import { Modal } from "@/components/Modal";
 import ToggleSwitch from "@/components/ToggleSwitch";
 import api from "@/lib/api";
 import { mInput, mLabel, mBtn } from "@/lib/modal-styles";
-import type { PersonDetail, ExternalId } from "@/types";
+import type { PersonDetail, ExternalId, PersonRelation } from "@/types";
 
 
 const ZH = {
@@ -26,6 +26,7 @@ const ZH = {
   gender: "性别", homepage: "主页", isVirtual: "虚拟人物", isAdult: "成人",
   save: "保存", cancel: "取消", deletePerson: "删除人物",
   confirmDelete: "确定要删除此人物吗？此操作不可撤销。", deleting: "删除中…",
+  relations: "外部关联", noRelations: "暂无外部关联",
 };
 const EN = {
   back: "Back", biography: "Biography", born: "Born", died: "Died", birthplace: "Birthplace",
@@ -34,6 +35,7 @@ const EN = {
   gender: "Gender", homepage: "Homepage", isVirtual: "Virtual", isAdult: "Adult",
   save: "Save", cancel: "Cancel", deletePerson: "Delete Person",
   confirmDelete: "Are you sure you want to delete this person? This action cannot be undone.", deleting: "Deleting…",
+  relations: "External Relations", noRelations: "No external relations",
 };
 
 export default function PersonDetailPage() {
@@ -64,6 +66,8 @@ export default function PersonDetailPage() {
   const [editIsVirtual, setEditIsVirtual] = useState(false);
   const [editIsAdult, setEditIsAdult] = useState(false);
 
+  const [relations, setRelations] = useState<PersonRelation[]>([]);
+
   const fetchDetail = useCallback(async () => {
     try {
       const res = await api.person.info(personId);
@@ -74,7 +78,8 @@ export default function PersonDetailPage() {
   useEffect(() => {
     if (!isValidId) return;
     (async () => { await fetchDetail(); setLoading(false); })();
-  }, [fetchDetail, isValidId]);
+    api.person.relation(personId).then((res) => setRelations(res.data)).catch(() => {});
+  }, [fetchDetail, isValidId, personId]);
 
   const openEditModal = () => {
     if (!detail) return;
@@ -165,7 +170,7 @@ export default function PersonDetailPage() {
               {detail.is_adult && <span>18+</span>}
             </div>
 
-            {detail.also_known_as.length > 0 && (<div className="flex flex-wrap gap-2 mb-4">{detail.also_known_as.map((name, i) => (<span key={i} className={`inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-medium ${c.tag}`}>{name}</span>))}</div>)}
+            {(detail.also_known_as?.length ?? 0) > 0 && (<div className="flex flex-wrap gap-2 mb-4">{detail.also_known_as!.map((name, i) => (<span key={i} className={`inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-medium ${c.tag}`}>{name}</span>))}</div>)}
 
             {externalIds.length > 0 && (<div className="flex flex-wrap gap-2">{externalIds.map((ext) => {const href = ext.type === "homepage" ? ext.value : ext.type === "tmdb_id_person" ? `https://www.themoviedb.org/person/${ext.value}` : ext.type === "imdb" ? `https://www.imdb.com/name/${ext.value}` : null; return (<a key={ext.type} href={href ?? undefined} target={href ? "_blank" : undefined} rel={href ? "noopener noreferrer" : undefined} className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-medium transition-all ${c.link} ${!href ? "cursor-default" : ""}`}>{ext.type.toUpperCase()}{href && <ExternalLink size={9} />}</a>);})}</div>)}
           </div>
@@ -174,6 +179,29 @@ export default function PersonDetailPage() {
 
       <div className="relative z-10 px-6 pt-4 pb-20"><div className="max-w-[1400px] mx-auto space-y-8">
         {detail.biography && <div><h3 className="text-xs font-semibold text-text-tertiary uppercase tracking-[0.06em] mb-3">{l.biography}</h3><p className="text-sm text-text-secondary leading-relaxed whitespace-pre-line">{detail.biography}</p></div>}
+        {relations.length > 0 && (
+          <div>
+            <h3 className="text-xs font-semibold text-text-tertiary uppercase tracking-[0.06em] mb-3">{l.relations}</h3>
+            <div className="space-y-2">
+              {relations.map((rel) => (
+                <div key={rel.type} className="flex items-center gap-3 p-3 rounded-xl bg-bg-hover/50">
+                  <span className="text-xs font-semibold uppercase text-text-tertiary min-w-[60px]">{rel.type}</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {rel.relations.map((rid) => (
+                      <span key={rid} className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-bg-card text-text-primary border border-border-primary">
+                        {rel.type === "tmdb" ? (
+                          <a href={`https://www.themoviedb.org/person/${rid}`} target="_blank" rel="noopener noreferrer" className="hover:text-text-secondary transition-colors flex items-center gap-1">{rid}<ExternalLink size={9} /></a>
+                        ) : (
+                          rid
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div></div>
 
       <Modal open={showEditModal} onClose={() => setShowEditModal(false)} title={l.editPerson}>

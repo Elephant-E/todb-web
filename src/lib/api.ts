@@ -20,6 +20,8 @@ import type {
   ImageItem,
   PersonListItem,
   PersonDetail,
+  ExternalPersonItem,
+  PersonRelation,
   ExternalId,
   MusicTag,
   MusicSong,
@@ -213,7 +215,7 @@ export const api = {
   },
 
   person: {
-    list: (params?: { name?: string; is_virtual?: boolean; page?: number; page_size?: number }) =>
+    list: (params?: { name?: string; page?: number; page_size?: number }) =>
       webClient.get<PaginatedResponse<PersonListItem>>("/person/list", { params }),
     query: (params?: { name?: string; is_virtual?: boolean }) =>
       webClient.get<PaginatedResponse<PersonListItem>>("/person/query", { params }),
@@ -234,6 +236,24 @@ export const api = {
       webClient.post<{ person_id: number }>("/person/updateOrCreate", data),
     delete: (personId: number) =>
       webClient.delete(`/person/${personId}/delete`),
+    ext: {
+      list: (params: {
+        type: "tmdb" | "spotify";
+        person_id?: number;
+        relation_name?: string;
+        relation_id?: number;
+        is_relation?: boolean;
+        page?: number;
+        page_size?: number;
+      }) =>
+        webClient.get<PaginatedResponse<ExternalPersonItem>>("/person/ext/list", { params }),
+      relation: (params: { type: string; relation_id: number; person_id: number | null }) =>
+        webClient.put<{ is_relation: boolean }>(
+          `/person/ext/relation?type=${params.type}&relation_id=${params.relation_id}&person_id=${params.person_id ?? ""}`
+        ),
+    },
+    relation: (personId: number) =>
+      webClient.get<PersonRelation[]>(`/person/${personId}/relation`),
   },
 
   music: {
@@ -245,7 +265,7 @@ export const api = {
         webClient.delete(`/music/tag/delete?tag_id=${tagId}`),
     },
     song: {
-      list: (params?: { title?: string; tag_id?: number; page?: number; page_size?: number }) =>
+      list: (params?: { title?: string; tag_id?: number; person_id_spotify_artist?: string; page?: number; page_size?: number }) =>
         webClient.get<PaginatedResponse<MusicSong>>("/music/song/list", { params }),
       detail: (songId: number) =>
         webClient.get<MusicSong>(`/music/song/${songId}`),
@@ -255,7 +275,7 @@ export const api = {
         webClient.delete(`/music/song/${songId}`),
     },
     album: {
-      list: (params?: { title?: string; tag_id?: number; page?: number; page_size?: number }) =>
+      list: (params?: { title?: string; tag_id?: number; person_id_spotify_artist?: string; page?: number; page_size?: number }) =>
         webClient.get<PaginatedResponse<MusicAlbum>>("/music/album/list", { params }),
       detail: (albumId: number) =>
         webClient.get<MusicAlbumDetail>(`/music/album/${albumId}`),
@@ -267,6 +287,10 @@ export const api = {
         webClient.get<MusicSong[]>(`/music/album/${albumId}/song`),
       updateSongs: (albumId: number, song_ids: number[]) =>
         webClient.post(`/music/album/${albumId}/song`, { song_ids }),
+    },
+    sync: {
+      spotifyPerson: (artistId: string) =>
+        webClient.post("/music/sync/spotifyPerson", { artist_id: artistId }),
     },
   },
 

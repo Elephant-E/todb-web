@@ -4,12 +4,13 @@ import { Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronDown, Loader2, Disc3, Music, X } from "lucide-react";
+import { ChevronDown, Loader2, Disc3, Music, X, RefreshCw } from "lucide-react";
 import { SearchBar } from "@/components/SearchBar";
 import { useLocale } from "@/components/LocaleProvider";
 import { posterUrl } from "@/lib/utils";
 import { activeCls, inactiveCls } from "@/lib/filter-styles";
 import api from "@/lib/api";
+import { SpotifySyncModal } from "@/components/SpotifySyncModal";
 import type { MusicAlbum, MusicSong, MusicTag } from "@/types";
 
 type MusicType = "all" | "album" | "song";
@@ -129,6 +130,8 @@ function MusicContent() {
     (searchParams.get("type") as MusicType) || "all"
   );
   const pageSize = 20;
+
+  const [showSpotifyModal, setShowSpotifyModal] = useState(false);
 
   const filtersKey = `${searchTitle}-${selectedTagId}-${selectedType}`;
 
@@ -262,6 +265,15 @@ function MusicContent() {
           <SearchBar initialValue={searchTitle} onSearch={handleSearch} placeholder={zh ? "搜索音乐..." : "Search music..."} />
         </div>
 
+        <div className="flex items-center gap-3 py-2">
+          <button
+            onClick={() => setShowSpotifyModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-border-primary text-text-tertiary hover:text-text-primary hover:border-text-tertiary transition-all"
+          >
+            <RefreshCw size={12} /> Spotify Sync
+          </button>
+        </div>
+
         <div className="flex gap-5">
           <aside className="w-52 shrink-0">
             <div className="sticky top-[80px] max-h-[calc(100vh-96px)] overflow-y-auto rounded-xl bg-bg-card p-1.5">
@@ -298,7 +310,7 @@ function MusicContent() {
                                 <div className="flex items-center gap-2 text-xs text-white/70">
                                   {album.release_date && <span>{album.release_date.slice(0, 4)}</span>}
                                   <span>·</span>
-                                  <span>{album.song_count} {songsLabel}</span>
+                                  <span>{album.count_song} {songsLabel}</span>
                                 </div>
                               </div>
                             </div>
@@ -348,6 +360,7 @@ function MusicContent() {
           </div>
         </div>
       </div>
+      <SpotifySyncModal open={showSpotifyModal} onClose={() => setShowSpotifyModal(false)} />
     </div>
   );
 }

@@ -4,76 +4,13 @@ import { Suspense, useState, useCallback } from "react";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronDown, Loader2, Users, X } from "lucide-react";
+import { Loader2, Users } from "lucide-react";
 import { SearchBar } from "@/components/SearchBar";
 import { useLocale } from "@/components/LocaleProvider";
 import { profileUrl } from "@/lib/utils";
-import { activeCls, inactiveCls } from "@/lib/filter-styles";
 import { useInfiniteScroll } from "@/lib/useInfiniteScroll";
 import api from "@/lib/api";
 import type { PersonListItem } from "@/types";
-
-
-function PeopleFilter({
-  isVirtual,
-  onChange,
-}: {
-  isVirtual: boolean | undefined;
-  onChange: (changes: { is_virtual?: boolean }) => void;
-}) {
-  const { locale } = useLocale();
-  const [open, setOpen] = useState(true);
-  const hasFilter = isVirtual !== undefined;
-
-  return (
-    <div className="w-full">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-text-primary w-full"
-      >
-        {locale === "zh" ? "筛选" : "Filter"}
-        {hasFilter && (
-          <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold rounded-full bg-text-primary text-bg-primary">
-            1
-          </span>
-        )}
-        <ChevronDown size={14} className={`text-text-tertiary transition-transform duration-200 ml-auto ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && (
-        <div className="space-y-5 px-4 pb-4 animate-fade-in">
-          <div>
-            <label className="text-xs font-semibold text-text-tertiary uppercase tracking-[0.06em] mb-2.5 block">
-              {locale === "zh" ? "类型" : "Type"}
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {([
-                { label: locale === "zh" ? "全部" : "All", value: undefined },
-                { label: locale === "zh" ? "真实" : "Real", value: false as boolean | undefined },
-                { label: locale === "zh" ? "虚拟" : "Virtual", value: true as boolean | undefined },
-              ]).map(({ label, value }) => (
-                <button
-                  key={String(value)}
-                  onClick={() => onChange({ is_virtual: value })}
-                  className={`px-2 py-2 text-[11px] font-medium rounded-lg border whitespace-nowrap transition-all duration-150 ${isVirtual === value ? activeCls : inactiveCls}`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-          {hasFilter && (
-            <button
-              onClick={() => onChange({ is_virtual: undefined })}
-              className="flex items-center justify-center gap-1.5 w-full px-3.5 py-2.5 text-xs font-medium text-text-tertiary hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors"
-            >
-              <X size={12} /> {locale === "zh" ? "清除" : "Clear"}
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
 
 function PeopleContent() {
   const router = useRouter();
@@ -81,22 +18,18 @@ function PeopleContent() {
   const { locale } = useLocale();
 
   const [searchName, setSearchName] = useState(searchParams.get("name") || "");
-  const [isVirtual, setIsVirtual] = useState<boolean | undefined>(
-    searchParams.get("is_virtual") === "true" ? true : searchParams.get("is_virtual") === "false" ? false : undefined
-  );
 
-  const filtersKey = `${searchName}-${isVirtual}`;
+  const filtersKey = `${searchName}`;
 
   const fetchPage = useCallback(async (page: number, pageSize: number) => {
     const params = {
       page,
       page_size: pageSize,
       ...(searchName && { name: searchName }),
-      ...(isVirtual !== undefined && { is_virtual: isVirtual }),
     };
     const res = await api.person.list(params);
     return { items: res.data.items, total: res.data.total };
-  }, [isVirtual, searchName]);
+  }, [searchName]);
 
   const { items, total, loading, loadingMore, sentinelRef, hasMore } = useInfiniteScroll<PersonListItem>({
     depsKey: filtersKey,
@@ -107,16 +40,6 @@ function PeopleContent() {
     setSearchName(value);
     const params = new URLSearchParams();
     if (value) params.set("name", value);
-    if (isVirtual !== undefined) params.set("is_virtual", String(isVirtual));
-    router.replace(`/people?${params.toString()}`, { scroll: false });
-  };
-
-  const handleFilterChange = (changes: { is_virtual?: boolean }) => {
-    const nextIsVirtual = changes.is_virtual;
-    setIsVirtual(nextIsVirtual);
-    const params = new URLSearchParams();
-    if (searchName) params.set("name", searchName);
-    if (nextIsVirtual !== undefined) params.set("is_virtual", String(nextIsVirtual));
     router.replace(`/people?${params.toString()}`, { scroll: false });
   };
 
@@ -135,13 +58,6 @@ function PeopleContent() {
           </div>
           <SearchBar initialValue={searchName} onSearch={handleSearch} placeholder={locale === "zh" ? "搜索人物..." : "Search people..."} />
         </div>
-
-        <div className="flex gap-5">
-          <aside className="w-52 shrink-0">
-            <div className="sticky top-[80px] max-h-[calc(100vh-96px)] overflow-y-auto rounded-xl bg-bg-card p-1.5">
-              <PeopleFilter isVirtual={isVirtual} onChange={handleFilterChange} />
-            </div>
-          </aside>
 
           <div className="flex-1 min-w-0">
             {loading ? (
@@ -215,7 +131,6 @@ function PeopleContent() {
               </>
             )}
           </div>
-        </div>
       </div>
     </div>
   );

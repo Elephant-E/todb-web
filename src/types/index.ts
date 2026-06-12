@@ -236,7 +236,7 @@ export interface PersonDetail {
   person_id: number;
   name: string;
   original_name: string | null;
-  also_known_as: string[];
+  also_known_as: string[] | null;
   tagline: string | null;
   biography: string | null;
   birthday: string | null;
@@ -251,6 +251,30 @@ export interface PersonDetail {
   image_backdrop: string | null;
   external_ids: ExternalId[];
   is_can_edit: boolean;
+  person_id_spotify_artist: string | null;
+}
+
+export interface ExternalPersonItem {
+  relation_id: number;
+  person_id: number | null;
+  tmdb_id?: number;
+  spotify_artist_id?: string;
+  name: string;
+  original_name: string;
+  tagline: string | null;
+  birthday: string | null;
+  deathday: string | null;
+  gender: string | null;
+  birthplace: string | null;
+  is_virtual: boolean | null;
+  is_adult: boolean;
+  image_profile: string | null;
+  image_backdrop: string | null;
+}
+
+export interface PersonRelation {
+  type: string;
+  relations: number[];
 }
 
 export interface MusicTag {
@@ -260,12 +284,13 @@ export interface MusicTag {
 }
 
 export interface MusicSongArtist {
-  id: number;
   name: string;
-  original_name: string | null;
+  original_name: string;
+  person_id: number | null;
+  person_id_spotify: number | null;
   gender: string | null;
-  is_virtual: boolean;
-  is_adult: boolean;
+  is_virtual: boolean | null;
+  is_adult: boolean | null;
 }
 
 export interface MusicSong {
@@ -285,15 +310,15 @@ export interface MusicAlbum {
   album_id: number;
   name: string;
   tagline: string | null;
-  album_type: string;
+  type: string;
   release_date: string | null;
   is_adult: boolean;
   image_poster: string | null;
   image_backdrop: string | null;
-  song_count: number;
+  count_song: number;
   person_artists: MusicSongArtist[];
 }
 
 export interface MusicAlbumDetail extends MusicAlbum {
-  songs: MusicSong[];
+  songs?: MusicSong[];
 }

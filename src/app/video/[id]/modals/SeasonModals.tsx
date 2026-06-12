@@ -71,9 +71,9 @@ export default function SeasonModals({ showAdd, showEdit, showDelete, editSeason
       <Modal open={showEdit} onClose={handleCloseEdit} title={l.editSeason}>
         {currentEditSeason && <>
           <div><label className={mLabel}>{l.seasonNumber}</label><input type="text" inputMode="numeric" min={1} value={currentEditSeason.season_number} onChange={(e) => setCurrentEditSeason((p) => p ? { ...p, season_number: Number(e.target.value) || 0 } : p)} className={mInput} /></div>
-          <div><label className={mLabel}>{l.seasonTitle}</label><input type="text" value={currentEditSeason.season_title} onChange={(e) => setCurrentEditSeason((p) => p ? { ...p, season_title: e.target.value } : p)} className={mInput} /></div>
-          <div><label className={mLabel}>{l.seasonDesc}</label><input type="text" value={currentEditSeason.season_description} onChange={(e) => setCurrentEditSeason((p) => p ? { ...p, season_description: e.target.value } : p)} className={mInput} /></div>
-          <div><label className={mLabel}>{l.dateAir}</label><input type="date" value={currentEditSeason.date_air} onChange={(e) => setCurrentEditSeason((p) => p ? { ...p, date_air: e.target.value } : p)} className={mInput} /></div>
+          <div><label className={mLabel}>{l.seasonTitle}</label><input type="text" value={currentEditSeason.season_title ?? ""} onChange={(e) => setCurrentEditSeason((p) => p ? { ...p, season_title: e.target.value } : p)} className={mInput} /></div>
+          <div><label className={mLabel}>{l.seasonDesc}</label><input type="text" value={currentEditSeason.season_description ?? ""} onChange={(e) => setCurrentEditSeason((p) => p ? { ...p, season_description: e.target.value } : p)} className={mInput} /></div>
+          <div><label className={mLabel}>{l.dateAir}</label><input type="date" value={currentEditSeason.date_air ?? ""} onChange={(e) => setCurrentEditSeason((p) => p ? { ...p, date_air: e.target.value } : p)} className={mInput} /></div>
           <div className="flex justify-end gap-3 pt-2">
             <button onClick={handleCloseEdit} className={`${mBtn} text-white/60 hover:text-white hover:bg-white/10`}>{l.back}</button>
             <button onClick={handleEdit} disabled={savingSeason} className={`${mBtn} bg-white text-[#111] hover:opacity-90 disabled:opacity-50`}>{savingSeason ? <Loader2 size={14} className="animate-spin" /> : l.editSeason}</button>
